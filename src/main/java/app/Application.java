@@ -5,8 +5,9 @@ import app.client.Const;
 import app.client.Repository;
 import app.client.models.License;
 import com.jsoniter.JsonIterator;
-
 import java.net.URISyntaxException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Application {
     private final Client client;
@@ -31,32 +32,34 @@ public class Application {
         System.err.println("Client has been started");
         waitingForServer();
         System.err.println("Server has been started");
+        runLicenseReceiver();
+        System.err.println("License receiver has been started");
+
         try {
-            for (int i = 0; i < 10; i++) {
-                var response = client.getNewLicense();
-                if (response.statusCode() == Const.HTTP_OK) {
-                    Repository.addFreeLicense(JsonIterator.deserialize(response.body(), License.class));
-                    System.err.println(response.body());
+            for (int i = 0; i <= 3500; i++) {
+                for (int j = 0; j <= 3500; j++) {
+                    var license = Repository.takeFreeLicense();
+                    client.dig(license, i, j, 1);
+                    client.dig(license, i, j, 2);
+                    client.dig(license, i, j, 3);
                 }
             }
-
-            var license = Repository.removeFreeLicense();
-            System.err.println(client.dig(license, 0, 0, 1).body());
-            System.err.println(client.dig(license, 0, 0, 2).body());
-            System.err.println(client.dig(license, 0, 0, 3).body());
-            license = Repository.removeFreeLicense();
-            System.err.println(client.dig(license, 0, 0, 4).body());
-            System.err.println(client.dig(license, 0, 0, 5).body());
-            System.err.println(client.dig(license, 0, 0, 6).body());
-            license = Repository.removeFreeLicense();
-            System.err.println(client.dig(license, 0, 0, 7).body());
-            System.err.println(client.dig(license, 0, 0, 8).body());
-            System.err.println(client.dig(license, 0, 0, 9).body());
-
-
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private void runLicenseReceiver() {
+        ExecutorService executorService = Executors.newFixedThreadPool(1);
+        executorService.submit(() -> {
+            while (true) {
+                var response = client.getNewLicense();
+                if (response.statusCode() == Const.HTTP_OK) {
+                    //System.err.println("New license has been received = " + response.body());
+                    Repository.addFreeLicense(JsonIterator.deserialize(response.body(), License.class));
+                }
+            }
+        });
     }
 
     private void waitingForServer() {

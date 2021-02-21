@@ -8,11 +8,11 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class Repository {
     private static final BlockingQueue<License> freeLicenses = new LinkedBlockingQueue<>(10);
 
-    public static License removeFreeLicense() {
-        return freeLicenses.poll();
+    public static License takeFreeLicense() throws InterruptedException {
+        return freeLicenses.take();
     }
 
-    public static boolean addFreeLicense(License license) {
-        return freeLicenses.add(license);
+    public static void addFreeLicense(License license) throws InterruptedException {
+        freeLicenses.put(license);
     }
 }
