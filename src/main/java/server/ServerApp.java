@@ -1,5 +1,8 @@
 package server;
 
+import app.client.models.License;
+import com.jsoniter.JsonIterator;
+import com.jsoniter.output.JsonStream;
 import io.javalin.Javalin;
 
 import java.lang.management.ManagementFactory;
@@ -23,7 +26,7 @@ public class ServerApp {
         });
 
         app.post("/licenses", ctx -> {
-            ctx.result("123");
+            ctx.result(JsonStream.serialize(new License(1,1,1)));
             System.out.println(atomicInteger.incrementAndGet());
             // System.out.println(threadDump(false, false));
         });
