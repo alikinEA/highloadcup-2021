@@ -48,4 +48,14 @@ public class DigRq {
     public void setDepth(int depth) {
         this.depth = depth;
     }
+
+    @Override
+    public String toString() {
+        return "DigRq{" +
+                "licenseID=" + licenseID +
+                ", posX=" + posX +
+                ", posY=" + posY +
+                ", depth=" + depth +
+                '}';
+    }
 }

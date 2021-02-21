@@ -38,4 +38,13 @@ public class License {
     public void setDigUsed(int digUsed) {
         this.digUsed = digUsed;
     }
+
+    @Override
+    public String toString() {
+        return "License{" +
+                "id=" + id +
+                ", digAllowed=" + digAllowed +
+                ", digUsed=" + digUsed +
+                '}';
+    }
 }
