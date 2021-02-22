@@ -77,7 +77,8 @@ public class Application {
                 var explored = Repository.takeExplored();
                 var exploredArea = explored.getArea();
                 var license = Repository.takeLicense();
-                client.dig(new DigRq(license.getId(), exploredArea.getPosX(), exploredArea.getPosY(), 1));
+                logger.error("Take license = " + license);
+                client.dig(new DigRq(license.getId(), exploredArea.getPosX(), exploredArea.getPosY(), 1), license);
             }
         });
         logger.error("Digger has been started");

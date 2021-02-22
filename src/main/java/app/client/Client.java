@@ -53,28 +53,30 @@ public class Client {
         return httpClient.send(newLicenseR, HttpResponse.BodyHandlers.ofString());
     }
 
-    public void dig(DigRq digRq) {
+    public void dig(DigRq digRq, License license) {
         httpClient.sendAsync(createDigRequest(digRq), HttpResponse.BodyHandlers.ofString())
                 .thenAcceptAsync(response -> {
+                    license.setDigAllowed(license.getDigAllowed() - 1);
+                    license.setDigUsed(license.getDigUsed() + 1);
+                    logger.error("dug with license = " + license);
+
                     if (response.statusCode() == Const.HTTP_OK) {
                         Repository.incDigSuccess();
                         logger.error("Success dig = " + digRq + Repository.getActionsInfo());
+                        if (license.getDigAllowed() > license.getDigUsed()) {
+                            Repository.putUsedLicense(license);
+                        }
                         var treasures = JsonIterator.deserialize(response.body(), String[].class);
                         for (int i = 0; i < treasures.length; i++) {
                             getMyMoney(treasures[i]);
                         }
-                        if (digRq.getDepth() == 3) {
-                            return;
-                        }
-                        digRq.setDepth(digRq.getDepth() + 1);
-                        dig(digRq);
                     } else if (response.statusCode() == Const.HTTP_NOT_FOUND) {
-                        Repository.incDigError();
-                        if (digRq.getDepth() == 3) {
-                            return;
+                        if (license.getDigAllowed() > license.getDigUsed()) {
+                            digRq.setDepth(digRq.getDepth() + 1);
+                            dig(digRq, license);
+                        } else {
+                            Repository.incDigError();
                         }
-                        digRq.setDepth(digRq.getDepth() + 1);
-                        dig(digRq);
                     } else {
                         logger.error("Dig error = " + response.body() + digRq);
                     }
