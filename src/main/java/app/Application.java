@@ -45,7 +45,7 @@ public class Application {
         for (int i = 0; i < 3500; i++) {
             for (int j = 0; j < 3500; j++) {
                 try {
-                    Thread.sleep(2);
+                    Thread.sleep(5);
                     client.explore(new Area(i, j, 1, 1));
                 } catch (InterruptedException e) {
                     e.printStackTrace();

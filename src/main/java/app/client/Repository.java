@@ -6,10 +6,13 @@ import app.client.models.License;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Repository {
     private static final BlockingQueue<License> licenses = new LinkedBlockingDeque<>(9);
-    private static final BlockingQueue<Explored> exploredAreas = new LinkedBlockingQueue<>(100);
+    private static final BlockingQueue<Explored> exploredAreas = new LinkedBlockingQueue<>(1000);
+    public static final AtomicInteger digRPS = new AtomicInteger(0);
+    public static final AtomicInteger explorerRPS = new AtomicInteger(0);
 
     public static License takeLicense() {
         try {

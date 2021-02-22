@@ -56,8 +56,9 @@ public class Client {
     public void dig(DigRq digRq) {
         httpClient.sendAsync(createDigRequest(digRq), HttpResponse.BodyHandlers.ofString())
                 .thenAcceptAsync(response -> {
+                    var digRPS = Repository.digRPS.incrementAndGet();
                     if (response.statusCode() == Const.HTTP_OK) {
-                        logger.error("Success dig = " + response.body() + digRq);
+                        logger.error("digRPS = " + digRPS + " Success dig = " + response.body() + digRq);
                         var treasures = JsonIterator.deserialize(response.body(), String[].class);
                         for (int i = 0; i < treasures.length; i++) {
                             getMyMoney(treasures[i]);
@@ -68,13 +69,14 @@ public class Client {
                         digRq.setDepth(digRq.getDepth() + 1);
                         dig(digRq);
                     } else if (response.statusCode() == Const.HTTP_NOT_FOUND) {
+                        logger.error("digRPS = " + digRPS + " Dig not found = " + response.body() + digRq);
                         if (digRq.getDepth() == 3) {
                             return;
                         }
                         digRq.setDepth(digRq.getDepth() + 1);
                         dig(digRq);
                     } else {
-                        logger.error("Dig error = " + response.body() + digRq);
+                        logger.error("digRPS = " + digRPS + " Dig error = " + response.body() + digRq);
                     }
                 } ,responseEx);
     }
@@ -93,6 +95,7 @@ public class Client {
     public void explore(Area area) {
         httpClient.sendAsync(createExploreRequest(area), HttpResponse.BodyHandlers.ofString())
                 .thenAcceptAsync(response -> {
+                    logger.error("exploreRPS = " + Repository.explorerRPS.incrementAndGet());
                     if (response.statusCode() == Const.HTTP_OK) {
                         var explored = JsonIterator.deserialize(response.body(), Explored.class);
                         if (explored.getAmount() > 0) {
