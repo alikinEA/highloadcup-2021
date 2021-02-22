@@ -16,6 +16,8 @@ public class Repository {
     private static final AtomicInteger digSuccess = new AtomicInteger(0);
     private static final AtomicInteger digError = new AtomicInteger(0);
     private static final AtomicInteger explorerSuccess = new AtomicInteger(0);
+    private static final AtomicInteger moneyError = new AtomicInteger(0);
+    private static final AtomicInteger moneySuccess = new AtomicInteger(0);
 
     public static License takeLicense() {
         try {
@@ -70,6 +72,8 @@ public class Repository {
     public static String getActionsInfo() {
         return "Actions info: DigSuccess = " + digSuccess.get()
                 + " DigError = " + digError.get()
+                + " MoneyError = " + moneyError.get()
+                + " MoneySuccess = " + moneySuccess.get()
                 + " ExplorerSuccess = " + explorerSuccess.get()
                 + " Explored size1 = " + exploredAreas1.size()
                 + " Explored size2 = " + exploredAreas2.size()
@@ -83,6 +87,14 @@ public class Repository {
 
     public static int incDigError() {
         return digError.incrementAndGet();
+    }
+
+    public static int incMoneySuccess() {
+        return moneySuccess.incrementAndGet();
+    }
+
+    public static int incMoneyError() {
+        return moneyError.incrementAndGet();
     }
 
     public static int incExplorerSuccess() {

@@ -87,7 +87,11 @@ public class Client {
         httpClient.sendAsync(createCashRequest(treasureId), HttpResponse.BodyHandlers.ofString())
                 .thenAcceptAsync(response -> {
                     if (response.statusCode() == Const.HTTP_OK) {
+                        Repository.incMoneySuccess();
                         //System.err.println("Money = " + response.body());
+                    } else if (response.statusCode() == Const.HTTP_SERVICE_UNAVAILABLE) {
+                        Repository.incMoneyError();
+                        //getMyMoney(treasureId);
                     } else {
                         logger.error("Money error = " + response.body());
                     }
