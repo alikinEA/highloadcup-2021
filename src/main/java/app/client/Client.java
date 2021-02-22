@@ -83,6 +83,9 @@ public class Client {
                             if (license.getDigAllowed() > 0) {
                                 Repository.putUsedLicense(license);
                             }
+                            if (currentAmount.get() < amount) {
+                                Repository.incTreasureNotFound();
+                            }
                         }
 
                     } else {
@@ -96,8 +99,9 @@ public class Client {
         httpClient.sendAsync(createCashRequest(treasureId), HttpResponse.BodyHandlers.ofString())
                 .thenAcceptAsync(response -> {
                     if (response.statusCode() == Const.HTTP_OK) {
-                        Repository.incMoneySuccess();
-                        System.err.println("Money = " + response.body() + Repository.getActionsInfo());
+                        if (Repository.incMoneySuccess() % 100 == 0) {
+                            System.err.println("Money = " + Repository.getActionsInfo());
+                        }
                     } else if (response.statusCode() == Const.HTTP_SERVICE_UNAVAILABLE) {
                         Repository.incMoneyError();
                         //getMyMoney(treasureId);

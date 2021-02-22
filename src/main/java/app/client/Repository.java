@@ -22,6 +22,7 @@ public class Repository {
     private static final AtomicInteger explorerSuccess = new AtomicInteger(0);
     private static final AtomicInteger moneyError = new AtomicInteger(0);
     private static final AtomicInteger moneySuccess = new AtomicInteger(0);
+    private static final AtomicInteger treasureNotFound = new AtomicInteger(0);
 
     public static License takeLicense() {
         try {
@@ -79,6 +80,7 @@ public class Repository {
                 + " DigMiss = " + digMiss.get()
                 + " MoneyError = " + moneyError.get()
                 + " MoneySuccess = " + moneySuccess.get()
+                + " TreasureNotFound = " + treasureNotFound.get()
                 + " ExplorerSuccess = " + explorerSuccess.get()
                 //+ " Explored size1 = " + exploredAreas1.size()
                 //+ " Explored size2 = " + exploredAreas2.size()
@@ -96,7 +98,7 @@ public class Repository {
     }
 
     public static int incDigMiss() {
-        return digError.incrementAndGet();
+        return digMiss.incrementAndGet();
     }
 
     public static int incMoneySuccess() {
@@ -117,5 +119,9 @@ public class Repository {
 
     public static boolean addDugFull(DigFull fullDig) {
         return dugFull.add(fullDig);
+    }
+
+    public static int incTreasureNotFound() {
+        return treasureNotFound.incrementAndGet();
     }
 }
