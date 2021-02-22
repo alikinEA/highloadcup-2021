@@ -1,6 +1,5 @@
 package app.client;
 
-import app.client.models.Area;
 import app.client.models.Explored;
 import app.client.models.License;
 
@@ -9,9 +8,8 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class Repository {
-    private static final BlockingQueue<Area> areas = new LinkedBlockingQueue<>(10_000);
     private static final BlockingQueue<License> licenses = new LinkedBlockingDeque<>(9);
-    private static final BlockingQueue<Explored> exploredAreas = new LinkedBlockingQueue<>();
+    private static final BlockingQueue<Explored> exploredAreas = new LinkedBlockingQueue<>(100);
 
     public static License takeLicense() {
         try {
@@ -38,27 +36,6 @@ public class Repository {
     }
 
     public static void putExplored(Explored explored) {
-        try {
-            exploredAreas.put(explored);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        exploredAreas.add(explored);
     }
-
-    public static Area takeArea() {
-        try {
-            return areas.take();
-        } catch (InterruptedException e) {
-            throw new RuntimeException("takeArea error", e);
-        }
-    }
-
-    public static void putArea(Area area) {
-        try {
-            areas.put(area);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
 }
