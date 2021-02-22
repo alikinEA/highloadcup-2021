@@ -6,6 +6,8 @@ import app.client.models.Explored;
 import app.client.models.License;
 import com.jsoniter.JsonIterator;
 import com.jsoniter.output.JsonStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
@@ -17,6 +19,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Client {
+    private static Logger logger = LoggerFactory.getLogger(Client.class);
+
     private final String url;
     private final ExecutorService responseEx = Executors.newFixedThreadPool(1);
     private final ExecutorService requestEx = Executors.newFixedThreadPool(1);
@@ -49,25 +53,28 @@ public class Client {
         return httpClient.send(newLicenseR, HttpResponse.BodyHandlers.ofString());
     }
 
-    public void dig(License license, int posX, int posY, int depth) {
-        var digR = new DigRq(license.getId(), posX, posY, depth);
-        httpClient.sendAsync(createDigRequest(digR), HttpResponse.BodyHandlers.ofString())
+    public void dig(DigRq digRq) {
+        httpClient.sendAsync(createDigRequest(digRq), HttpResponse.BodyHandlers.ofString())
                 .thenAcceptAsync(response -> {
                     if (response.statusCode() == Const.HTTP_OK) {
-                        System.err.println("Success dig = " + response.body());
+                        logger.error("Success dig = " + response.body() + digRq);
                         var treasures = JsonIterator.deserialize(response.body(), String[].class);
                         for (int i = 0; i < treasures.length; i++) {
                             getMyMoney(treasures[i]);
                         }
-                        if (depth < 4) {
-                            dig(license, posX, posY, depth + 1);
+                        if (digRq.getDepth() == 3) {
+                            return;
                         }
+                        digRq.setDepth(digRq.getDepth() + 1);
+                        dig(digRq);
                     } else if (response.statusCode() == Const.HTTP_NOT_FOUND) {
-                        if (depth < 4) {
-                            dig(license, posX, posY, depth + 1);
+                        if (digRq.getDepth() == 3) {
+                            return;
                         }
+                        digRq.setDepth(digRq.getDepth() + 1);
+                        dig(digRq);
                     } else {
-                        System.err.println("Dig error = " + response.body());
+                        logger.error("Dig error = " + response.body() + digRq);
                     }
                 } ,responseEx);
     }
@@ -76,9 +83,9 @@ public class Client {
         httpClient.sendAsync(createCashRequest(treasureId), HttpResponse.BodyHandlers.ofString())
                 .thenAcceptAsync(response -> {
                     if (response.statusCode() == Const.HTTP_OK) {
-                        System.err.println("Money = " + response.body());
+                        //System.err.println("Money = " + response.body());
                     } else {
-                        System.err.println("Money error = " + response.body());
+                        logger.error("Money error = " + response.body());
                     }
                 }, responseEx);
     }
@@ -89,11 +96,10 @@ public class Client {
                     if (response.statusCode() == Const.HTTP_OK) {
                         var explored = JsonIterator.deserialize(response.body(), Explored.class);
                         if (explored.getAmount() > 0) {
-                            Repository.putExplored(explored);
-                            System.err.println("Put explored = " + explored);
+                            Repository.addExplored(explored);
                         }
                     } else {
-                        System.err.println("explore error = " + response.body());
+                        logger.error("explore error = " + response.body());
                     }
                 }, responseEx);
     }

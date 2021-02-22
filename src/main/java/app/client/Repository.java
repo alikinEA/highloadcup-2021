@@ -35,7 +35,11 @@ public class Repository {
         }
     }
 
-    public static void putExplored(Explored explored) {
+    public static void addExplored(Explored explored) {
         exploredAreas.add(explored);
+    }
+
+    public static int getExploredSize() {
+        return exploredAreas.size();
     }
 }
