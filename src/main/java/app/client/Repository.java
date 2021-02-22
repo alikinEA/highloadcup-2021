@@ -10,7 +10,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class Repository {
     private static final BlockingQueue<License> licenses = new LinkedBlockingDeque<>(9);
-    private static final BlockingQueue<Explored> exploredAreas = new LinkedBlockingQueue<>(1000);
+    private static final BlockingQueue<Explored> exploredAreas1 = new LinkedBlockingQueue<>(200);
+    private static final BlockingQueue<Explored> exploredAreas2 = new LinkedBlockingQueue<>(100);
     private static final AtomicInteger digSuccess = new AtomicInteger(0);
     private static final AtomicInteger digError = new AtomicInteger(0);
     private static final AtomicInteger explorerSuccess = new AtomicInteger(0);
@@ -33,25 +34,32 @@ public class Repository {
 
     public static Explored takeExplored() {
         try {
-            return exploredAreas.take();
+            if (exploredAreas2.size() != 0) {
+                return exploredAreas2.take();
+            } else {
+                return exploredAreas1.take();
+            }
         } catch (InterruptedException e) {
             throw new RuntimeException("takeExplored error", e);
         }
     }
 
     public static void addExplored(Explored explored) {
-        exploredAreas.add(explored);
-    }
-
-    public static int getExploredSize() {
-        return exploredAreas.size();
+        if (explored.getAmount() == 1) {
+            if (exploredAreas1.size() < 100) {
+                exploredAreas1.add(explored);
+            }
+        } else if (explored.getAmount() > 1) {
+            exploredAreas2.add(explored);
+        }
     }
 
     public static String getActionsInfo() {
         return "Actions info: DigSuccess = " + digSuccess.get()
                 + " DigError = " + digError.get()
                 + " ExplorerSuccess = " + explorerSuccess.get()
-                + " Explored size = " + Repository.getExploredSize()
+                + " Explored size1 = " + exploredAreas1.size()
+                + " Explored size2 = " + exploredAreas2.size()
                 + " Licenses size = " + licenses.size();
     }
 

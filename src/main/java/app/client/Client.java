@@ -58,7 +58,7 @@ public class Client {
                 .thenAcceptAsync(response -> {
                     if (response.statusCode() == Const.HTTP_OK) {
                         Repository.incDigSuccess();
-                        logger.error("Success dig = " + response.body() + digRq + Repository.getActionsInfo());
+                        logger.error("Success dig = " + digRq + Repository.getActionsInfo());
                         var treasures = JsonIterator.deserialize(response.body(), String[].class);
                         for (int i = 0; i < treasures.length; i++) {
                             getMyMoney(treasures[i]);
@@ -98,9 +98,7 @@ public class Client {
                     if (response.statusCode() == Const.HTTP_OK) {
                         Repository.incExplorerSuccess();
                         var explored = JsonIterator.deserialize(response.body(), Explored.class);
-                        if (explored.getAmount() > 1) {
-                            Repository.addExplored(explored);
-                        }
+                        Repository.addExplored(explored);
                     } else {
                         logger.error("explore error = " + response.body());
                     }
