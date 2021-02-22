@@ -19,9 +19,8 @@ public class Client {
     private static Logger logger = LoggerFactory.getLogger(Client.class);
 
     private final String url;
-    private final ExecutorService responseEx = Executors.newFixedThreadPool(1);
+    private final ExecutorService responseEx = Executors.newFixedThreadPool(2);
     private final ExecutorService requestEx = Executors.newFixedThreadPool(1);
-    private final HttpRequest licensesR;
     private final HttpRequest newLicenseR;
 
     private final HttpClient httpClient = HttpClient.newBuilder()
@@ -30,20 +29,11 @@ public class Client {
 
     public Client(String address, int port) throws URISyntaxException {
         url = "http://" + address + ":" + port;
-        licensesR = HttpRequest.newBuilder()
-                .uri(new URI(url + "/licenses"))
-                .headers(Const.CONTENT_TYPE, Const.APPLICATION_JSON)
-                .GET()
-                .build();
         newLicenseR = HttpRequest.newBuilder()
                 .uri(new URI(url + "/licenses"))
                 .headers(Const.CONTENT_TYPE, Const.APPLICATION_JSON)
                 .POST(HttpRequest.BodyPublishers.ofString("[]"))
                 .build();
-    }
-
-    public HttpResponse<String> getLicenses() throws IOException, InterruptedException {
-       return httpClient.send(licensesR, HttpResponse.BodyHandlers.ofString());
     }
 
     public HttpResponse<String> getNewLicense() throws IOException, InterruptedException {
@@ -72,6 +62,10 @@ public class Client {
                         } else {
                             Repository.incDigMiss();
                         }
+                        if (digRq.getDepth() == 10 && currentAmount.get() < amount) {
+                            Repository.incTreasureNotFound();
+                            logger.error("Dug one more time = " + fullDig + Repository.getActionsInfo());
+                        }
 
                         if (digRq.getDepth() < 10 && currentAmount.get() < amount) {
                             if (license.getDigAllowed() > 0) {
@@ -82,9 +76,6 @@ public class Client {
                         } else {
                             if (license.getDigAllowed() > 0) {
                                 Repository.putUsedLicense(license);
-                            }
-                            if (currentAmount.get() < amount) {
-                                Repository.incTreasureNotFound();
                             }
                         }
 
@@ -103,9 +94,9 @@ public class Client {
         httpClient.sendAsync(httpRequest, HttpResponse.BodyHandlers.ofString())
                 .thenAcceptAsync(response -> {
                     if (response.statusCode() == Const.HTTP_OK) {
-                        if (Repository.incMoneySuccess() % 100 == 0) {
+                        /*if (Repository.incMoneySuccess() % 100 == 0) {
                             System.err.println("Money = " + Repository.getActionsInfo());
-                        }
+                        }*/
                     } else if (response.statusCode() == Const.HTTP_SERVICE_UNAVAILABLE) {
                         Repository.incMoneyError();
                         Repository.addMoneyRetry(response.request());

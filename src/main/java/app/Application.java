@@ -73,7 +73,7 @@ public class Application {
                     if (digFull != null) {
                         digFull.getDigRq().setLicenseID(license.getId());
                         digFull.setLicense(license);
-                        logger.error("Dug one more time = " + digFull);
+                        //logger.error("Dug one more time = " + digFull + Repository.getActionsInfo());
                         client.dig(digFull);
                     } else {
                         //logger.error("New license has been received = " + response.body());
@@ -105,9 +105,12 @@ public class Application {
     private void waitingForServer() {
         try {
             Thread.sleep(100);
-            var response = client.getLicenses();
+            var response = client.getNewLicense();
             if (response.statusCode() != Const.HTTP_OK) {
                 this.waitingForServer();
+            } else {
+                var license = JsonIterator.deserialize(response.body(), License.class);
+                Repository.putLicense(license);
             }
         } catch (Exception e) {
             this.waitingForServer();
