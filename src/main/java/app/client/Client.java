@@ -53,7 +53,7 @@ public class Client {
                         digRq.setDepth(digRq.getDepth() + 1);
 
                         if (response.statusCode() == Const.HTTP_OK) {
-                            currentAmount.getAndIncrement();
+                            currentAmount.incrementAndGet();
                             Repository.incDigSuccess();
                             var treasures = JsonIterator.deserialize(response.body(), String[].class);
                             for (int i = 0; i < treasures.length; i++) {
@@ -62,12 +62,12 @@ public class Client {
                         } else {
                             Repository.incDigMiss();
                         }
-                        if (digRq.getDepth() == 10 && currentAmount.get() < amount) {
+                        if (digRq.getDepth() == 11 && currentAmount.get() < amount) {
                             Repository.incTreasureNotFound();
-                            logger.error("Dug one more time = " + fullDig + Repository.getActionsInfo());
+                            //logger.error("Dug 11 time = " + fullDig + Repository.getActionsInfo());
                         }
 
-                        if (digRq.getDepth() < 10 && currentAmount.get() < amount) {
+                        if (digRq.getDepth() < 11 && currentAmount.get() < amount) {
                             if (license.getDigAllowed() > 0) {
                                 dig(fullDig);
                             } else {
@@ -94,9 +94,9 @@ public class Client {
         httpClient.sendAsync(httpRequest, HttpResponse.BodyHandlers.ofString())
                 .thenAcceptAsync(response -> {
                     if (response.statusCode() == Const.HTTP_OK) {
-                        /*if (Repository.incMoneySuccess() % 100 == 0) {
+                        if (Repository.incMoneySuccess() % 100 == 0) {
                             System.err.println("Money = " + Repository.getActionsInfo());
-                        }*/
+                        }
                     } else if (response.statusCode() == Const.HTTP_SERVICE_UNAVAILABLE) {
                         Repository.incMoneyError();
                         Repository.addMoneyRetry(response.request());

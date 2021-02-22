@@ -5,17 +5,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class DigFull {
     private DigRq digRq;
     private int amount;
-    private AtomicInteger currentAmount;
+    private final AtomicInteger currentAmount;
     private License license;
 
     public DigFull() {
-
+        this.currentAmount = new AtomicInteger(0);
     }
 
-    public DigFull(DigRq digRq, int amount, AtomicInteger currentAmount, License license) {
+    public DigFull(DigRq digRq, int amount, int currentAmount, License license) {
         this.digRq = digRq;
         this.amount = amount;
-        this.currentAmount = currentAmount;
+        this.currentAmount = new AtomicInteger(currentAmount);
         this.license = license;
     }
 
@@ -41,10 +41,6 @@ public class DigFull {
         return currentAmount;
     }
 
-    public void setCurrentAmount(AtomicInteger currentAmount) {
-        this.currentAmount = currentAmount;
-    }
-
     public License getLicense() {
         return license;
     }
@@ -58,7 +54,7 @@ public class DigFull {
         return "DigFull{" +
                 "digRq=" + digRq +
                 ", amount=" + amount +
-                ", currentAmount=" + currentAmount +
+                ", currentAmount=" + currentAmount.get() +
                 ", license=" + license +
                 '}';
     }

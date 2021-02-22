@@ -95,7 +95,7 @@ public class Application {
                 var license = Repository.takeLicense();
                 //logger.error("Take license = " + license);
                 var digRq = new DigRq(license.getId(), exploredArea.getPosX(), exploredArea.getPosY(), 1);
-                var digFull = new DigFull(digRq, explored.getAmount(), new AtomicInteger(0), license);
+                var digFull = new DigFull(digRq, explored.getAmount(), 0, license);
                 client.dig(digFull);
             }
         });
