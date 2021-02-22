@@ -4,6 +4,7 @@ import app.client.Client;
 import app.client.Const;
 import app.client.Repository;
 import app.client.models.Area;
+import app.client.models.DigFull;
 import app.client.models.DigRq;
 import app.client.models.License;
 import com.jsoniter.JsonIterator;
@@ -13,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import java.net.URISyntaxException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Application {
     private static Logger logger = LoggerFactory.getLogger(Client.class);
@@ -62,11 +64,12 @@ public class Application {
                 var response = client.getNewLicense();
                 if (response.statusCode() == Const.HTTP_OK) {
                     var license = JsonIterator.deserialize(response.body(), License.class);
-                    var digRq = Repository.pollDugArea();
-                    if (digRq != null) {
-                        digRq.setLicenseID(license.getId());
-                        logger.error("Dug one more time = " + digRq + license);
-                        client.dig(digRq, license);
+                    var digFull = Repository.pollDugFull();
+                    if (digFull != null) {
+                        digFull.getDigRq().setLicenseID(license.getId());
+                        digFull.setLicense(license);
+                        logger.error("Dug one more time = " + digFull);
+                        client.dig(digFull);
                     } else {
                         //logger.error("New license has been received = " + response.body());
                         Repository.putLicense(license);
@@ -86,7 +89,9 @@ public class Application {
                 var exploredArea = explored.getArea();
                 var license = Repository.takeLicense();
                 //logger.error("Take license = " + license);
-                client.dig(new DigRq(license.getId(), exploredArea.getPosX(), exploredArea.getPosY(), 1), license);
+                var digRq = new DigRq(license.getId(), exploredArea.getPosX(), exploredArea.getPosY(), 1);
+                var digFull = new DigFull(digRq, explored.getAmount(), new AtomicInteger(0), license);
+                client.dig(digFull);
             }
         });
         logger.error("Digger has been started");

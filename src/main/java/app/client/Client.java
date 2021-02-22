@@ -1,9 +1,6 @@
 package app.client;
 
-import app.client.models.Area;
-import app.client.models.DigRq;
-import app.client.models.Explored;
-import app.client.models.License;
+import app.client.models.*;
 import com.jsoniter.JsonIterator;
 import com.jsoniter.output.JsonStream;
 import org.slf4j.Logger;
@@ -53,33 +50,44 @@ public class Client {
         return httpClient.send(newLicenseR, HttpResponse.BodyHandlers.ofString());
     }
 
-    public void dig(DigRq digRq, License license) {
-        httpClient.sendAsync(createDigRequest(digRq), HttpResponse.BodyHandlers.ofString())
+    public void dig(DigFull fullDig) {
+        httpClient.sendAsync(createDigRequest(fullDig.getDigRq()), HttpResponse.BodyHandlers.ofString())
                 .thenAcceptAsync(response -> {
-                    license.setDigAllowed(license.getDigAllowed() - 1);
-                    //license.setDigUsed(license.getDigUsed() + 1);
-                    //logger.error("dug with license = " + license);
+                    if (response.statusCode() == Const.HTTP_OK || response.statusCode() == Const.HTTP_NOT_FOUND) {
+                        var license = fullDig.getLicense();
+                        var digRq = fullDig.getDigRq();
+                        var amount = fullDig.getAmount();
+                        var currentAmount = fullDig.getCurrentAmount();
 
-                    if (response.statusCode() == Const.HTTP_OK) {
-                        Repository.incDigSuccess();
-                        //logger.error("Success dig = " + digRq + Repository.getActionsInfo());
-                        if (license.getDigAllowed() > 0) {
-                            Repository.putUsedLicense(license);
-                        }
-                        var treasures = JsonIterator.deserialize(response.body(), String[].class);
-                        for (int i = 0; i < treasures.length; i++) {
-                            getMyMoney(treasures[i]);
-                        }
-                    } else if (response.statusCode() == Const.HTTP_NOT_FOUND) {
-                        if (license.getDigAllowed() > 0) {
-                            digRq.setDepth(digRq.getDepth() + 1);
-                            dig(digRq, license);
+                        license.setDigAllowed(license.getDigAllowed() - 1);
+                        digRq.setDepth(digRq.getDepth() + 1);
+
+                        if (response.statusCode() == Const.HTTP_OK) {
+                            currentAmount.getAndIncrement();
+                            Repository.incDigSuccess();
+                            var treasures = JsonIterator.deserialize(response.body(), String[].class);
+                            for (int i = 0; i < treasures.length; i++) {
+                                getMyMoney(treasures[i]);
+                            }
                         } else {
                             Repository.incDigMiss();
                         }
+
+                        if (digRq.getDepth() < 10 && currentAmount.get() < amount) {
+                            if (license.getDigAllowed() > 0) {
+                                dig(fullDig);
+                            } else {
+                                Repository.addDugFull(fullDig);
+                            }
+                        } else {
+                            if (license.getDigAllowed() > 0) {
+                                Repository.putUsedLicense(license);
+                            }
+                        }
+
                     } else {
                         Repository.incDigError();
-                        logger.error("Dig error = " + response.body() + digRq);
+                        logger.error("Dig error = " + response.body() + fullDig);
                     }
                 } ,responseEx);
     }

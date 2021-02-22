@@ -1,5 +1,6 @@
 package app.client;
 
+import app.client.models.DigFull;
 import app.client.models.DigRq;
 import app.client.models.Explored;
 import app.client.models.License;
@@ -10,7 +11,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Repository {
-    private static final BlockingQueue<DigRq> dugArea = new LinkedBlockingDeque<>();
+    private static final BlockingQueue<DigFull> dugFull = new LinkedBlockingDeque<>();
     private static final BlockingQueue<License> licenses = new LinkedBlockingDeque<>(9);
     private static final BlockingQueue<License> licensesUsed = new LinkedBlockingDeque<>(9);
     private static final BlockingQueue<Explored> exploredAreas1 = new LinkedBlockingQueue<>(200);
@@ -81,7 +82,7 @@ public class Repository {
                 + " ExplorerSuccess = " + explorerSuccess.get()
                 //+ " Explored size1 = " + exploredAreas1.size()
                 //+ " Explored size2 = " + exploredAreas2.size()
-                + " Dug area = " + dugArea.size()
+                + " DugFull = " + dugFull.size()
                 + " Licenses size = " + licenses.size()
                 + " Licenses used size = " + licensesUsed.size();
     }
@@ -110,7 +111,11 @@ public class Repository {
         return explorerSuccess.incrementAndGet();
     }
 
-    public static DigRq pollDugArea() {
-        return dugArea.poll();
+    public static DigFull pollDugFull() {
+        return dugFull.poll();
+    }
+
+    public static boolean addDugFull(DigFull fullDig) {
+        return dugFull.add(fullDig);
     }
 }
