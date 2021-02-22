@@ -11,8 +11,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Repository {
     private static final BlockingQueue<License> licenses = new LinkedBlockingDeque<>(9);
     private static final BlockingQueue<Explored> exploredAreas = new LinkedBlockingQueue<>(1000);
-    public static final AtomicInteger digRPS = new AtomicInteger(0);
-    public static final AtomicInteger explorerRPS = new AtomicInteger(0);
+    private static final AtomicInteger digSuccess = new AtomicInteger(0);
+    private static final AtomicInteger digError = new AtomicInteger(0);
+    private static final AtomicInteger explorerSuccess = new AtomicInteger(0);
 
     public static License takeLicense() {
         try {
@@ -45,4 +46,25 @@ public class Repository {
     public static int getExploredSize() {
         return exploredAreas.size();
     }
+
+    public static String getActionsInfo() {
+        return "Actions info: DigSuccess = " + digSuccess.get()
+                + " DigError = " + digError.get()
+                + " ExplorerSuccess = " + explorerSuccess.get()
+                + " Explored size = " + Repository.getExploredSize()
+                + " Licenses size = " + licenses.size();
+    }
+
+    public static int incDigSuccess() {
+        return digSuccess.incrementAndGet();
+    }
+
+    public static int incDigError() {
+        return digError.incrementAndGet();
+    }
+
+    public static int incExplorerSuccess() {
+        return explorerSuccess.incrementAndGet();
+    }
+
 }

@@ -45,7 +45,7 @@ public class Application {
         for (int i = 0; i < 3500; i++) {
             for (int j = 0; j < 3500; j++) {
                 try {
-                    Thread.sleep(5);
+                    Thread.sleep(1);
                     client.explore(new Area(i, j, 1, 1));
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -61,7 +61,7 @@ public class Application {
             while (true) {
                 var response = client.getNewLicense();
                 if (response.statusCode() == Const.HTTP_OK) {
-                    logger.error("New license has been received = " + response.body());
+                    //logger.error("New license has been received = " + response.body());
                     Repository.putLicense(JsonIterator.deserialize(response.body(), License.class));
                 }
             }
@@ -77,8 +77,6 @@ public class Application {
                 var explored = Repository.takeExplored();
                 var exploredArea = explored.getArea();
                 var license = Repository.takeLicense();
-
-                logger.error("Start dig - Explored size = " + Repository.getExploredSize());
                 client.dig(new DigRq(license.getId(), exploredArea.getPosX(), exploredArea.getPosY(), 1));
             }
         });
