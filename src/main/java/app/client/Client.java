@@ -57,13 +57,13 @@ public class Client {
         httpClient.sendAsync(createDigRequest(digRq), HttpResponse.BodyHandlers.ofString())
                 .thenAcceptAsync(response -> {
                     license.setDigAllowed(license.getDigAllowed() - 1);
-                    license.setDigUsed(license.getDigUsed() + 1);
-                    logger.error("dug with license = " + license);
+                    //license.setDigUsed(license.getDigUsed() + 1);
+                    //logger.error("dug with license = " + license);
 
                     if (response.statusCode() == Const.HTTP_OK) {
                         Repository.incDigSuccess();
                         logger.error("Success dig = " + digRq + Repository.getActionsInfo());
-                        if (license.getDigAllowed() > license.getDigUsed()) {
+                        if (license.getDigAllowed() > 0) {
                             Repository.putUsedLicense(license);
                         }
                         var treasures = JsonIterator.deserialize(response.body(), String[].class);
@@ -71,7 +71,7 @@ public class Client {
                             getMyMoney(treasures[i]);
                         }
                     } else if (response.statusCode() == Const.HTTP_NOT_FOUND) {
-                        if (license.getDigAllowed() > license.getDigUsed()) {
+                        if (license.getDigAllowed() > 0) {
                             digRq.setDepth(digRq.getDepth() + 1);
                             dig(digRq, license);
                         } else {
