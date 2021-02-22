@@ -61,8 +61,16 @@ public class Application {
             while (true) {
                 var response = client.getNewLicense();
                 if (response.statusCode() == Const.HTTP_OK) {
-                    //logger.error("New license has been received = " + response.body());
-                    Repository.putLicense(JsonIterator.deserialize(response.body(), License.class));
+                    var license = JsonIterator.deserialize(response.body(), License.class);
+                    var digRq = Repository.pollDugArea();
+                    if (digRq != null) {
+                        digRq.setLicenseID(license.getId());
+                        logger.error("Dug one more time = " + digRq + license);
+                        client.dig(digRq, license);
+                    } else {
+                        //logger.error("New license has been received = " + response.body());
+                        Repository.putLicense(license);
+                    }
                 }
             }
         });

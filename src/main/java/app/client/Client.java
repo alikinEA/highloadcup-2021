@@ -62,7 +62,7 @@ public class Client {
 
                     if (response.statusCode() == Const.HTTP_OK) {
                         Repository.incDigSuccess();
-                        logger.error("Success dig = " + digRq + Repository.getActionsInfo());
+                        //logger.error("Success dig = " + digRq + Repository.getActionsInfo());
                         if (license.getDigAllowed() > 0) {
                             Repository.putUsedLicense(license);
                         }
@@ -75,9 +75,10 @@ public class Client {
                             digRq.setDepth(digRq.getDepth() + 1);
                             dig(digRq, license);
                         } else {
-                            Repository.incDigError();
+                            Repository.incDigMiss();
                         }
                     } else {
+                        Repository.incDigError();
                         logger.error("Dig error = " + response.body() + digRq);
                     }
                 } ,responseEx);
@@ -88,7 +89,7 @@ public class Client {
                 .thenAcceptAsync(response -> {
                     if (response.statusCode() == Const.HTTP_OK) {
                         Repository.incMoneySuccess();
-                        //System.err.println("Money = " + response.body());
+                        System.err.println("Money = " + response.body() + Repository.getActionsInfo());
                     } else if (response.statusCode() == Const.HTTP_SERVICE_UNAVAILABLE) {
                         Repository.incMoneyError();
                         //getMyMoney(treasureId);
