@@ -96,7 +96,11 @@ public class Client {
     }
 
     public void getMyMoney(String treasureId) {
-        httpClient.sendAsync(createCashRequest(treasureId), HttpResponse.BodyHandlers.ofString())
+        getMyMoney(createCashRequest(treasureId));
+    }
+
+    public void getMyMoney(HttpRequest httpRequest) {
+        httpClient.sendAsync(httpRequest, HttpResponse.BodyHandlers.ofString())
                 .thenAcceptAsync(response -> {
                     if (response.statusCode() == Const.HTTP_OK) {
                         if (Repository.incMoneySuccess() % 100 == 0) {
@@ -104,7 +108,7 @@ public class Client {
                         }
                     } else if (response.statusCode() == Const.HTTP_SERVICE_UNAVAILABLE) {
                         Repository.incMoneyError();
-                        //getMyMoney(treasureId);
+                        Repository.addMoneyRetry(response.request());
                     } else {
                         logger.error("Money error = " + response.body());
                     }

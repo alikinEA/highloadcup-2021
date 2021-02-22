@@ -5,6 +5,7 @@ import app.client.models.DigRq;
 import app.client.models.Explored;
 import app.client.models.License;
 
+import java.net.http.HttpRequest;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -14,6 +15,7 @@ public class Repository {
     private static final BlockingQueue<DigFull> dugFull = new LinkedBlockingDeque<>();
     private static final BlockingQueue<License> licenses = new LinkedBlockingDeque<>(9);
     private static final BlockingQueue<License> licensesUsed = new LinkedBlockingDeque<>(9);
+    private static final BlockingQueue<HttpRequest> moneyRetry = new LinkedBlockingDeque<>();
     private static final BlockingQueue<Explored> exploredAreas1 = new LinkedBlockingQueue<>(200);
     private static final BlockingQueue<Explored> exploredAreas2 = new LinkedBlockingQueue<>(100);
     private static final AtomicInteger digSuccess = new AtomicInteger(0);
@@ -123,5 +125,17 @@ public class Repository {
 
     public static int incTreasureNotFound() {
         return treasureNotFound.incrementAndGet();
+    }
+
+    public static void addMoneyRetry(HttpRequest request) {
+        moneyRetry.add(request);
+    }
+
+    public static HttpRequest pollMoneyRetry() {
+        return moneyRetry.poll();
+    }
+
+    public static int decrementMoneyError() {
+        return moneyError.decrementAndGet();
     }
 }

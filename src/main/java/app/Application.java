@@ -61,6 +61,11 @@ public class Application {
         executorService.submit(() -> {
             Thread.currentThread().setPriority(10);
             while (true) {
+                var moneyRetry = Repository.pollMoneyRetry();
+                if (moneyRetry != null) {
+                    Repository.decrementMoneyError();
+                    client.getMyMoney(moneyRetry);
+                }
                 var response = client.getNewLicense();
                 if (response.statusCode() == Const.HTTP_OK) {
                     var license = JsonIterator.deserialize(response.body(), License.class);
