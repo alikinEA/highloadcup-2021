@@ -43,11 +43,9 @@ public class Application {
         runLicenseReceiver();
         runDigger();
 
-        var area = searchBestPlace();
-        logger.error("Best place = " + area);
 
-        for (int i = area.getPosX(); i < area.getSizeX(); i++) {
-            for (int j = area.getPosY(); j < area.getSizeY(); j++) {
+        for (int i = 0; i < 3500; i = i + 1) {
+            for (int j = 0; j < 3500; j++) {
                 try {
                     Thread.sleep(1);
                     tryToGetMoney();
@@ -57,10 +55,6 @@ public class Application {
                 }
             }
         }
-    }
-
-    private Area searchBestPlace() {
-        return new Area(0, 0, 3500, 3500);
     }
 
     private void tryToGetMoney() {
@@ -104,11 +98,13 @@ public class Application {
             while (true) {
                 var explored = Repository.takeExplored();
                 var exploredArea = explored.getArea();
-                var license = Repository.takeLicense();
-                //logger.error("Take license = " + license);
-                var digRq = new DigRq(license.getId(), exploredArea.getPosX(), exploredArea.getPosY(), 1);
-                var digFull = new DigFull(digRq, explored.getAmount(), 0, license);
-                client.dig(digFull);
+                for (int i = 0; i < explored.getArea().getSizeX(); i++) {
+                    var license = Repository.takeLicense();
+                    //logger.error("Take license = " + license);
+                    var digRq = new DigRq(license.getId(), exploredArea.getPosX() + i, exploredArea.getPosY(), 1);
+                    var digFull = new DigFull(digRq, explored.getAmount(), 0, license);
+                    client.dig(digFull);
+                }
             }
         });
         logger.error("Digger has been started");

@@ -68,11 +68,12 @@ public class Repository {
     }
 
     public static void addExplored(Explored explored) {
-        if (explored.getAmount() == 1) {
+        var area = explored.getArea();
+        if (explored.getAmount() == area.getSizeY() * area.getSizeY()) {
             if (exploredAreas1.size() < 100) {
                 exploredAreas1.add(explored);
             }
-        } else if (explored.getAmount() > 1) {
+        } else if (explored.getAmount() > area.getSizeY() * area.getSizeY()) {
             exploredAreas2.add(explored);
         }
     }
