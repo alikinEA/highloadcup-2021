@@ -1,5 +1,6 @@
 package app.client;
 
+import app.Application;
 import app.client.models.*;
 import com.jsoniter.JsonIterator;
 import com.jsoniter.output.JsonStream;
@@ -62,12 +63,12 @@ public class Client {
                         } else {
                             Repository.incDigMiss();
                         }
-                        if (digRq.getDepth() == 11 && currentAmount.get() < amount) {
+                        if (digRq.getDepth() == Application.GRABTIEFE && currentAmount.get() < amount) {
                             Repository.incTreasureNotFound();
                             //logger.error("Dug 11 time = " + fullDig + Repository.getActionsInfo());
                         }
 
-                        if (digRq.getDepth() < 11 && currentAmount.get() < amount) {
+                        if (digRq.getDepth() < Application.GRABTIEFE && currentAmount.get() < amount) {
                             if (license.getDigAllowed() > 0) {
                                 dig(fullDig);
                             } else {
@@ -117,10 +118,11 @@ public class Client {
                         var area = exploreFull.getArea();
                         Repository.incExplorerSuccess();
                         var explored = JsonIterator.deserialize(response.body(), Explored.class);
-                        if (area.getSizeX() > 1) {
+                        if (area.getSizeX() > 1 && explored.getAmount() > area.getSizeX() * area.getSizeY()) {
+                            Repository.incRichArea();
                             for (int i = 0; i < area.getSizeX(); i++) {
-                                area.setPosX(area.getPosX() + 1);
-                                area.setSizeX(area.getSizeX() - 1);
+                                area.setPosX(area.getPosX() + i);
+                                area.setSizeX(1);
                                 explore(area);
                             }
                         } else {

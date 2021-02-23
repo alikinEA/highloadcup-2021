@@ -25,6 +25,7 @@ public class Repository {
     private static final AtomicInteger treasureNotFound = new AtomicInteger(0);
     private static final AtomicInteger licenseError = new AtomicInteger(0);
     private static final AtomicInteger richPlaces = new AtomicInteger(0);
+    private static final AtomicInteger richArea = new AtomicInteger(0);
 
     public static License takeLicense() {
         try {
@@ -84,6 +85,7 @@ public class Repository {
                 + " DigMiss = " + digMiss.get()
                 + " Explore retry = " + exploreRetry.size()
                 + " Rich places = " + richPlaces.get()
+                + " Rich area = " + richArea.get()
                // + " MoneyError = " + moneyError.get()
                 + " MoneySuccess = " + moneySuccess.get()
                 + " TreasureNotFound = " + treasureNotFound.get()
@@ -154,5 +156,9 @@ public class Repository {
 
     public static ExploreFull pollExploreRetry() {
         return exploreRetry.poll();
+    }
+
+    public static void incRichArea() {
+        richArea.incrementAndGet();
     }
 }

@@ -17,7 +17,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Application {
-    private static final int STEP = 2;
+    private static final int STEP = 1;
+    public static final int GRABTIEFE = 11;
 
     private static Logger logger = LoggerFactory.getLogger(Client.class);
 
@@ -28,6 +29,7 @@ public class Application {
     }
 
     public static void main(String[] args) throws URISyntaxException {
+        logger.error("Step = " + STEP + "GRABTIEFE = " + GRABTIEFE );
         var address = System.getenv("ADDRESS");
         //var address = "localhost";
         logger.error("ADDRESS = " + address);
