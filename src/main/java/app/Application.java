@@ -43,11 +43,11 @@ public class Application {
         runLicenseReceiver();
         runDigger();
 
-        Thread.currentThread().setPriority(1);
         for (int i = 0; i < 3500; i++) {
             for (int j = 0; j < 3500; j++) {
                 try {
                     Thread.sleep(1);
+                    tryToGetMoney();
                     client.explore(new Area(i, j, 1, 1));
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -56,16 +56,19 @@ public class Application {
         }
     }
 
+    private void tryToGetMoney() {
+        var moneyRetry = Repository.pollMoneyRetry();
+        if (moneyRetry != null) {
+            client.getMyMoney(moneyRetry);
+            Repository.decrementMoneyError();
+        }
+    }
+
     private void runLicenseReceiver() {
         ExecutorService executorService = Executors.newFixedThreadPool(1);
         executorService.submit(() -> {
             Thread.currentThread().setPriority(10);
             while (true) {
-                var moneyRetry = Repository.pollMoneyRetry();
-                if (moneyRetry != null) {
-                    Repository.decrementMoneyError();
-                    client.getMyMoney(moneyRetry);
-                }
                 var response = client.getNewLicense();
                 if (response.statusCode() == Const.HTTP_OK) {
                     var license = JsonIterator.deserialize(response.body(), License.class);
