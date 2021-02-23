@@ -63,12 +63,12 @@ public class Client {
                         } else {
                             Repository.incDigMiss();
                         }
-                        if (digRq.getDepth() == Application.GRABTIEFE && currentAmount.get() < amount) {
+                        if (digRq.getDepth() == 11 && currentAmount.get() < amount) {
                             Repository.incTreasureNotFound();
-                            //logger.error("Dug 11 time = " + fullDig + Repository.getActionsInfo());
+                            logger.error("Dug 10 time = " + fullDig + Repository.getActionsInfo());
                         }
 
-                        if (digRq.getDepth() < Application.GRABTIEFE && currentAmount.get() < amount) {
+                        if (digRq.getDepth() < 11 && currentAmount.get() < amount) {
                             if (license.getDigAllowed() > 0) {
                                 dig(fullDig);
                             } else {
@@ -96,7 +96,7 @@ public class Client {
                 .thenAcceptAsync(response -> {
                     if (response.statusCode() == Const.HTTP_OK) {
                         if (Repository.incMoneySuccess() % 100 == 0) {
-                            System.err.println("Money = " + Repository.getActionsInfo());
+                            logger.error("Money = " + Repository.getActionsInfo());
                         }
                     } else if (response.statusCode() == Const.HTTP_SERVICE_UNAVAILABLE) {
                         Repository.incMoneyError();
@@ -118,14 +118,16 @@ public class Client {
                         var area = exploreFull.getArea();
                         Repository.incExplorerSuccess();
                         var explored = JsonIterator.deserialize(response.body(), Explored.class);
-                        if (area.getSizeX() > 1 && explored.getAmount() > area.getSizeX() * area.getSizeY()) {
+                        if (area.getSizeY() > 1 && explored.getAmount() > area.getSizeX() * area.getSizeY()) {
                             Repository.incRichArea();
-                            for (int i = 0; i < area.getSizeX(); i++) {
-                                area.setPosX(area.getPosX() + i);
-                                area.setSizeX(1);
-                                explore(area);
+                            for (int i = 0; i < area.getSizeY(); i++) {
+                                explore(new Area(area.getPosX(), area.getPosY() + i, 1, 1));
                             }
-                        } else {
+                        } else if (area.getSizeY() > 1 && explored.getAmount() > 0 && Repository.exploredAreas1.size() < 100) {
+                            for (int i = 0; i < area.getSizeY(); i++) {
+                                explore(new Area(area.getPosX(), area.getPosY() + i, 1, 1));
+                            }
+                        } else if (area.getSizeY() == 1 && explored.getAmount() > 0) {
                             Repository.addExplored(explored);
                         }
                     } else if (response.statusCode() == Const.RATE_LIMIT) {

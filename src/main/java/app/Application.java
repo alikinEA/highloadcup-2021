@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class Application {
     private static final int STEP = 1;
-    public static final int GRABTIEFE = 11;
+    //public static final int GRABTIEFE = 12;
 
     private static Logger logger = LoggerFactory.getLogger(Client.class);
 
@@ -29,7 +29,7 @@ public class Application {
     }
 
     public static void main(String[] args) throws URISyntaxException {
-        logger.error("Step = " + STEP + "GRABTIEFE = " + GRABTIEFE );
+        logger.error("Step ver6 = " + STEP + " GRABTIEFE = " + 0 );
         var address = System.getenv("ADDRESS");
         //var address = "localhost";
         logger.error("ADDRESS = " + address);
@@ -47,8 +47,8 @@ public class Application {
         runLicenseReceiver();
         runDigger();
 
-        for (int i = 0; i < 3500; i = i + STEP) {
-            for (int j = 0; j < 3500; j++) {
+        for (int i = 0; i < 3500; i++) {
+            for (int j = 0; j < 3500; j = j + STEP) {
                 try {
                     Thread.sleep(1);
                     tryToGetMoney();
@@ -56,7 +56,7 @@ public class Application {
                     if (exploreRequest != null) {
                         client.explore(exploreRequest);
                     } else {
-                        client.explore(new Area(i, j, STEP, 1));
+                        client.explore(new Area(i, j, 1, STEP));
                     }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -106,13 +106,11 @@ public class Application {
             while (true) {
                 var explored = Repository.takeExplored();
                 var exploredArea = explored.getArea();
-                for (int i = 0; i < explored.getArea().getSizeX(); i++) {
-                    var license = Repository.takeLicense();
-                    //logger.error("Take license = " + license);
-                    var digRq = new DigRq(license.getId(), exploredArea.getPosX() + i, exploredArea.getPosY(), 1);
-                    var digFull = new DigFull(digRq, explored.getAmount(), 0, license);
-                    client.dig(digFull);
-                }
+                var license = Repository.takeLicense();
+                //logger.error("Take license = " + license);
+                var digRq = new DigRq(license.getId(), exploredArea.getPosX(), exploredArea.getPosY(), 1);
+                var digFull = new DigFull(digRq, explored.getAmount(), 0, license);
+                client.dig(digFull);
             }
         });
         logger.error("Digger has been started");
