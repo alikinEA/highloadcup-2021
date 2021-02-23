@@ -79,6 +79,8 @@ public class Application {
                         //logger.error("New license has been received = " + response.body());
                         Repository.putLicense(license);
                     }
+                } else {
+                    Repository.incLicenseErrors();
                 }
             }
         });

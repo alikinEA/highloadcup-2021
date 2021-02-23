@@ -20,7 +20,7 @@ public class Client {
 
     private final String url;
     private final ExecutorService responseEx = Executors.newFixedThreadPool(2);
-    private final ExecutorService requestEx = Executors.newFixedThreadPool(1);
+    private final ExecutorService requestEx = Executors.newFixedThreadPool(2);
     private final HttpRequest newLicenseR;
 
     private final HttpClient httpClient = HttpClient.newBuilder()

@@ -25,6 +25,7 @@ public class Repository {
     private static final AtomicInteger moneyError = new AtomicInteger(0);
     private static final AtomicInteger moneySuccess = new AtomicInteger(0);
     private static final AtomicInteger treasureNotFound = new AtomicInteger(0);
+    private static final AtomicInteger licenseError = new AtomicInteger(0);
 
     public static License takeLicense() {
         try {
@@ -87,6 +88,7 @@ public class Repository {
                 //+ " Explored size1 = " + exploredAreas1.size()
                 //+ " Explored size2 = " + exploredAreas2.size()
                 + " DugFull = " + dugFull.size()
+                + " LicenseError size = " + licenseError.get()
                 + " Licenses size = " + licenses.size()
                 + " Licenses used size = " + licensesUsed.size();
     }
@@ -137,5 +139,9 @@ public class Repository {
 
     public static int decrementMoneyError() {
         return moneyError.decrementAndGet();
+    }
+
+    public static int incLicenseErrors() {
+        return licenseError.incrementAndGet();
     }
 }
