@@ -1,9 +1,6 @@
 package app.client;
 
-import app.client.models.DigFull;
-import app.client.models.DigRq;
-import app.client.models.Explored;
-import app.client.models.License;
+import app.client.models.*;
 
 import java.net.http.HttpRequest;
 import java.util.concurrent.BlockingQueue;
@@ -16,6 +13,7 @@ public class Repository {
     private static final BlockingQueue<License> licenses = new LinkedBlockingDeque<>(9);
     private static final BlockingQueue<License> licensesUsed = new LinkedBlockingDeque<>(9);
     private static final BlockingQueue<HttpRequest> moneyRetry = new LinkedBlockingDeque<>();
+    private static final BlockingQueue<ExploreFull> exploreRetry = new LinkedBlockingDeque<>();
     private static final BlockingQueue<Explored> exploredAreas1 = new LinkedBlockingQueue<>(200);
     private static final BlockingQueue<Explored> exploredAreas2 = new LinkedBlockingQueue<>(100);
     private static final AtomicInteger digSuccess = new AtomicInteger(0);
@@ -26,6 +24,7 @@ public class Repository {
     private static final AtomicInteger moneySuccess = new AtomicInteger(0);
     private static final AtomicInteger treasureNotFound = new AtomicInteger(0);
     private static final AtomicInteger licenseError = new AtomicInteger(0);
+    private static final AtomicInteger richPlaces = new AtomicInteger(0);
 
     public static License takeLicense() {
         try {
@@ -69,11 +68,12 @@ public class Repository {
 
     public static void addExplored(Explored explored) {
         var area = explored.getArea();
-        if (explored.getAmount() == area.getSizeY() * area.getSizeY()) {
+        if (explored.getAmount() == area.getSizeX() * area.getSizeY()) {
             if (exploredAreas1.size() < 100) {
                 exploredAreas1.add(explored);
             }
-        } else if (explored.getAmount() > area.getSizeY() * area.getSizeY()) {
+        } else if (explored.getAmount() > area.getSizeX() * area.getSizeY()) {
+            richPlaces.incrementAndGet();
             exploredAreas2.add(explored);
         }
     }
@@ -82,12 +82,14 @@ public class Repository {
         return "Actions info: DigSuccess = " + digSuccess.get()
                 + " DigError = " + digError.get()
                 + " DigMiss = " + digMiss.get()
-                + " MoneyError = " + moneyError.get()
+                + " Explore retry = " + exploreRetry.size()
+                + " Rich places = " + richPlaces.get()
+               // + " MoneyError = " + moneyError.get()
                 + " MoneySuccess = " + moneySuccess.get()
                 + " TreasureNotFound = " + treasureNotFound.get()
                 + " ExplorerSuccess = " + explorerSuccess.get()
-                //+ " Explored size1 = " + exploredAreas1.size()
-                //+ " Explored size2 = " + exploredAreas2.size()
+                + " Explored size1 = " + exploredAreas1.size()
+                + " Explored size2 = " + exploredAreas2.size()
                 + " DugFull = " + dugFull.size()
                 + " LicenseError size = " + licenseError.get()
                 + " Licenses size = " + licenses.size()
@@ -144,5 +146,13 @@ public class Repository {
 
     public static int incLicenseErrors() {
         return licenseError.incrementAndGet();
+    }
+
+    public static void exploreRetry(ExploreFull request) {
+        exploreRetry.add(request);
+    }
+
+    public static ExploreFull pollExploreRetry() {
+        return exploreRetry.poll();
     }
 }

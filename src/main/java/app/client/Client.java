@@ -107,12 +107,29 @@ public class Client {
     }
 
     public void explore(Area area) {
-        httpClient.sendAsync(createExploreRequest(area), HttpResponse.BodyHandlers.ofString())
+        explore(new ExploreFull(createExploreRequest(area), area));
+    }
+
+    public void explore(ExploreFull exploreFull) {
+        httpClient.sendAsync(exploreFull.getHttpRequest(), HttpResponse.BodyHandlers.ofString())
                 .thenAcceptAsync(response -> {
                     if (response.statusCode() == Const.HTTP_OK) {
+                        var area = exploreFull.getArea();
                         Repository.incExplorerSuccess();
                         var explored = JsonIterator.deserialize(response.body(), Explored.class);
-                        Repository.addExplored(explored);
+                        if (area.getSizeX() > 1) {
+                            for (int i = 0; i < area.getSizeX(); i++) {
+                                area.setPosX(area.getPosX() + 1);
+                                area.setSizeX(area.getSizeX() - 1);
+                                explore(area);
+                            }
+                        } else {
+                            Repository.addExplored(explored);
+                        }
+                    } else if (response.statusCode() == Const.RATE_LIMIT) {
+                        exploreFull.setHttpRequest(response.request());
+                        Repository.exploreRetry(exploreFull);
+                        //logger.error("explore error = " + response.body());
                     } else {
                         logger.error("explore error = " + response.body());
                     }

@@ -17,6 +17,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Application {
+    private static final int STEP = 2;
+
     private static Logger logger = LoggerFactory.getLogger(Client.class);
 
     private final Client client;
@@ -43,13 +45,17 @@ public class Application {
         runLicenseReceiver();
         runDigger();
 
-
-        for (int i = 0; i < 3500; i = i + 1) {
+        for (int i = 0; i < 3500; i = i + STEP) {
             for (int j = 0; j < 3500; j++) {
                 try {
                     Thread.sleep(1);
                     tryToGetMoney();
-                    client.explore(new Area(i, j, 1, 1));
+                    var exploreRequest = Repository.pollExploreRetry();
+                    if (exploreRequest != null) {
+                        client.explore(exploreRequest);
+                    } else {
+                        client.explore(new Area(i, j, STEP, 1));
+                    }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
