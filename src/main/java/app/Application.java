@@ -43,8 +43,11 @@ public class Application {
         runLicenseReceiver();
         runDigger();
 
-        for (int i = 0; i < 3500; i++) {
-            for (int j = 0; j < 3500; j++) {
+        var area = searchBestPlace();
+        logger.error("Best place = " + area);
+
+        for (int i = area.getPosX(); i < area.getSizeX(); i++) {
+            for (int j = area.getPosY(); j < area.getSizeY(); j++) {
                 try {
                     Thread.sleep(1);
                     tryToGetMoney();
@@ -54,6 +57,10 @@ public class Application {
                 }
             }
         }
+    }
+
+    private Area searchBestPlace() {
+        return new Area(0, 0, 3500, 3500);
     }
 
     private void tryToGetMoney() {
@@ -108,18 +115,17 @@ public class Application {
     }
 
     private void waitingForServer() {
-        try {
-            Thread.sleep(100);
-            var response = client.getNewLicense();
-            if (response.statusCode() != Const.HTTP_OK) {
-                this.waitingForServer();
-            } else {
-                var license = JsonIterator.deserialize(response.body(), License.class);
-                Repository.putLicense(license);
+        while(true) {
+            try {
+                Thread.sleep(10);
+                var response = client.getNewLicense();
+                if (response.statusCode() != Const.HTTP_OK) {
+                    logger.error("Server has been started");
+                    return;
+                }
+            } catch (Exception e) {
+
             }
-        } catch (Exception e) {
-            this.waitingForServer();
         }
-        logger.error("Server has been started");
     }
 }
