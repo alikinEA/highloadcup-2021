@@ -40,7 +40,9 @@ public class Client {
     public HttpResponse<String> getNewLicense() throws IOException, InterruptedException, URISyntaxException {
         var cash = Repository.pollMoney();
         if (cash != null) {
-            return httpClient.send(createPaidLicenseRequest(cash), HttpResponse.BodyHandlers.ofString());
+            var response = httpClient.send(createPaidLicenseRequest(cash), HttpResponse.BodyHandlers.ofString());
+            logger.error("Paid license purchase = " + response + Repository.getActionsInfo());
+            return response;
         } else {
             //logger.error("No money = " + Repository.getActionsInfo());
             return httpClient.send(newLicenseR, HttpResponse.BodyHandlers.ofString());
@@ -113,7 +115,7 @@ public class Client {
                             Repository.addMoney(i);
                         }
                         if (Repository.incMoneySuccess() % 100 == 0) {
-                            logger.error("Money = " + Repository.getActionsInfo());
+                            //logger.error("Money = " + Repository.getActionsInfo());
                         }
                     } else if (response.statusCode() == Const.HTTP_SERVICE_UNAVAILABLE) {
                         Repository.incMoneyError();
