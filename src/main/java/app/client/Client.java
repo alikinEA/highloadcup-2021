@@ -42,6 +42,7 @@ public class Client {
         if (cash != null) {
             return httpClient.send(createPaidLicenseRequest(cash), HttpResponse.BodyHandlers.ofString());
         } else {
+            //logger.error("No money = " + Repository.getActionsInfo());
             return httpClient.send(newLicenseR, HttpResponse.BodyHandlers.ofString());
         }
     }
@@ -76,12 +77,12 @@ public class Client {
                         } else {
                             Repository.incDigMiss();
                         }
-                        if (digRq.getDepth() == 11 && currentAmount.get() < amount) {
+                        if (digRq.getDepth() == Application.GRABTIEFE && currentAmount.get() < amount) {
                             Repository.incTreasureNotFound();
-                            logger.error("Dug 10 time = " + fullDig + Repository.getActionsInfo());
+                            //logger.error("Dug 10 time = " + fullDig + Repository.getActionsInfo());
                         }
 
-                        if (digRq.getDepth() < 11 && currentAmount.get() < amount) {
+                        if (digRq.getDepth() < Application.GRABTIEFE && currentAmount.get() < amount) {
                             if (license.getDigAllowed() > 0) {
                                 dig(fullDig);
                             } else {

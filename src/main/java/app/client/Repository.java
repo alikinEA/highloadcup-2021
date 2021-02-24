@@ -13,8 +13,8 @@ public class Repository {
     private static final BlockingQueue<License> licensesStore = new LinkedBlockingDeque<>(9);
     private static final BlockingQueue<HttpRequest> moneyRetry = new LinkedBlockingDeque<>();
     private static final BlockingQueue<ExploreFull> exploreRetry = new LinkedBlockingDeque<>();
-    public static final BlockingQueue<Explored> exploredAreas1 = new LinkedBlockingQueue<>(2000);
-    private static final BlockingQueue<Explored> exploredAreas2 = new LinkedBlockingQueue<>(1000);
+    public static final BlockingQueue<Explored> exploredAreas1 = new LinkedBlockingQueue<>(200);
+    private static final BlockingQueue<Explored> exploredAreas2 = new LinkedBlockingQueue<>(300);
     private static final AtomicInteger digSuccess = new AtomicInteger(0);
     private static final AtomicInteger digMiss = new AtomicInteger(0);
     private static final AtomicInteger digError = new AtomicInteger(0);
@@ -38,14 +38,18 @@ public class Repository {
         }
     }
 
+    public static void putLicenseNew(License license) {
+        putLicense(license);
+        if (license.getDigAllowed() == 5) {
+            paidLicenses.incrementAndGet();
+        } else {
+            freeLicenses.incrementAndGet();
+        }
+    }
+
     public static void putLicense(License license) {
         try {
             licensesStore.put(license);
-            if (license.getDigAllowed() == 5) {
-                Repository.incPaidLicenses();
-            } else {
-                Repository.incFreeLicenses();
-            }
         } catch (InterruptedException e) {
             throw new RuntimeException("putLicense error", e);
         }
@@ -166,13 +170,5 @@ public class Repository {
 
     public static void incRichArea() {
         richArea.incrementAndGet();
-    }
-
-    public static void incPaidLicenses() {
-        paidLicenses.incrementAndGet();
-    }
-
-    public static void incFreeLicenses() {
-        freeLicenses.incrementAndGet();
     }
 }

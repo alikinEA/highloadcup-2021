@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class Application {
     private static final int STEP = 1;
-    //public static final int GRABTIEFE = 12;
+    public static final int GRABTIEFE = 11;
 
     private static Logger logger = LoggerFactory.getLogger(Client.class);
 
@@ -29,7 +29,7 @@ public class Application {
     }
 
     public static void main(String[] args) throws URISyntaxException {
-        logger.error("Step ver6 = " + STEP + " GRABTIEFE = " + 0 );
+        logger.error("Step ver6 = " + STEP + " GRABTIEFE = " + GRABTIEFE );
         var address = System.getenv("ADDRESS");
         //var address = "localhost";
         logger.error("ADDRESS = " + address);
@@ -80,9 +80,9 @@ public class Application {
             while (true) {
                 var response = client.getNewLicense();
                 if (response.statusCode() == Const.HTTP_OK) {
-                    logger.error("Getting license success = " + response + Repository.getActionsInfo());
+                    //logger.error("Getting license success = " + Repository.getActionsInfo());
                     var license = JsonIterator.deserialize(response.body(), License.class);
-                    Repository.putLicense(license);
+                    Repository.putLicenseNew(license);
                 } else {
                     logger.error("Getting license error = " + response + Repository.getActionsInfo());
                     Repository.incLicenseErrors();
@@ -126,7 +126,7 @@ public class Application {
                 var response = client.getNewLicense();
                 if (response.statusCode() == Const.HTTP_OK) {
                     var license = JsonIterator.deserialize(response.body(), License.class);
-                    Repository.putLicense(license);
+                    Repository.putLicenseNew(license);
                     logger.error("Server has been started");
                     return;
                 }
