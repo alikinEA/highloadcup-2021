@@ -13,8 +13,8 @@ public class Repository {
     private static final BlockingQueue<License> licensesStore = new LinkedBlockingDeque<>(9);
     private static final BlockingQueue<HttpRequest> moneyRetry = new LinkedBlockingDeque<>();
     private static final BlockingQueue<ExploreFull> exploreRetry = new LinkedBlockingDeque<>();
-    public static final BlockingQueue<Explored> exploredAreas1 = new LinkedBlockingQueue<>(200);
-    private static final BlockingQueue<Explored> exploredAreas2 = new LinkedBlockingQueue<>(300);
+    public static final BlockingQueue<Explored> exploredAreas1 = new LinkedBlockingQueue<>(2000);
+    private static final BlockingQueue<Explored> exploredAreas2 = new LinkedBlockingQueue<>(500);
     private static final AtomicInteger digSuccess = new AtomicInteger(0);
     private static final AtomicInteger digMiss = new AtomicInteger(0);
     private static final AtomicInteger digError = new AtomicInteger(0);
