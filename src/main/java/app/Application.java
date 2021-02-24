@@ -47,6 +47,10 @@ public class Application {
         runLicenseReceiver();
         runDigger();
 
+        for (int i = 3490; i > 3400; i--) {
+            client.explore(new Area(3490, i, 1, 1));
+        }
+
         for (int i = 0; i < 3500; i++) {
             for (int j = 0; j < 3500; j = j + STEP) {
                 try {
