@@ -80,18 +80,11 @@ public class Application {
             while (true) {
                 var response = client.getNewLicense();
                 if (response.statusCode() == Const.HTTP_OK) {
+                    logger.error("Getting license success = " + response + Repository.getActionsInfo());
                     var license = JsonIterator.deserialize(response.body(), License.class);
-                    var digFull = Repository.pollDugFull();
-                    if (digFull != null) {
-                        digFull.getDigRq().setLicenseID(license.getId());
-                        digFull.setLicense(license);
-                        //logger.error("Dug one more time = " + digFull + Repository.getActionsInfo());
-                        client.dig(digFull);
-                    } else {
-                        //logger.error("New license has been received = " + response.body());
-                        Repository.putLicense(license);
-                    }
+                    Repository.putLicense(license);
                 } else {
+                    logger.error("Getting license error = " + response + Repository.getActionsInfo());
                     Repository.incLicenseErrors();
                 }
             }
@@ -104,13 +97,23 @@ public class Application {
         executorService.submit(() -> {
             Thread.currentThread().setPriority(9);
             while (true) {
-                var explored = Repository.takeExplored();
-                var exploredArea = explored.getArea();
-                var license = Repository.takeLicense();
-                //logger.error("Take license = " + license);
-                var digRq = new DigRq(license.getId(), exploredArea.getPosX(), exploredArea.getPosY(), 1);
-                var digFull = new DigFull(digRq, explored.getAmount(), 0, license);
-                client.dig(digFull);
+                var digFull = Repository.pollDugFull();
+                if (digFull != null) {
+                    var license = Repository.takeLicense();
+                    digFull.getDigRq().setLicenseID(license.getId());
+                    digFull.setLicense(license);
+                    //logger.error("Dug one more time = " + digFull + Repository.getActionsInfo());
+                    client.dig(digFull);
+                    Thread.sleep(1);
+                } else {
+                    var license = Repository.takeLicense();
+                    var explored = Repository.takeExplored();
+                    var exploredArea = explored.getArea();
+                    //logger.error("Take license = " + license);
+                    var digRq = new DigRq(license.getId(), exploredArea.getPosX(), exploredArea.getPosY(), 1);
+                    client.dig(new DigFull(digRq, explored.getAmount(), 0, license));
+                    Thread.sleep(1);
+                }
             }
         });
         logger.error("Digger has been started");
@@ -121,7 +124,9 @@ public class Application {
             try {
                 Thread.sleep(10);
                 var response = client.getNewLicense();
-                if (response.statusCode() != Const.HTTP_OK) {
+                if (response.statusCode() == Const.HTTP_OK) {
+                    var license = JsonIterator.deserialize(response.body(), License.class);
+                    Repository.putLicense(license);
                     logger.error("Server has been started");
                     return;
                 }

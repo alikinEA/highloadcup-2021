@@ -10,12 +10,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class Repository {
     private static final BlockingQueue<DigFull> dugFull = new LinkedBlockingDeque<>();
-    private static final BlockingQueue<License> licenses = new LinkedBlockingDeque<>(9);
-    private static final BlockingQueue<License> licensesUsed = new LinkedBlockingDeque<>(9);
+    private static final BlockingQueue<License> licensesStore = new LinkedBlockingDeque<>(9);
     private static final BlockingQueue<HttpRequest> moneyRetry = new LinkedBlockingDeque<>();
     private static final BlockingQueue<ExploreFull> exploreRetry = new LinkedBlockingDeque<>();
-    public static final BlockingQueue<Explored> exploredAreas1 = new LinkedBlockingQueue<>(200);
-    private static final BlockingQueue<Explored> exploredAreas2 = new LinkedBlockingQueue<>(100);
+    public static final BlockingQueue<Explored> exploredAreas1 = new LinkedBlockingQueue<>(2000);
+    private static final BlockingQueue<Explored> exploredAreas2 = new LinkedBlockingQueue<>(1000);
     private static final AtomicInteger digSuccess = new AtomicInteger(0);
     private static final AtomicInteger digMiss = new AtomicInteger(0);
     private static final AtomicInteger digError = new AtomicInteger(0);
@@ -27,13 +26,13 @@ public class Repository {
     private static final AtomicInteger richPlaces = new AtomicInteger(0);
     private static final AtomicInteger richArea = new AtomicInteger(0);
 
+    private static final BlockingQueue<Integer> wallet = new LinkedBlockingDeque<>();
+    private static final AtomicInteger paidLicenses = new AtomicInteger(0);
+    private static final AtomicInteger freeLicenses = new AtomicInteger(0);
+
     public static License takeLicense() {
         try {
-            if (licensesUsed.size() == 0) {
-                return licenses.take();
-            } else {
-                return licensesUsed.take();
-            }
+            return licensesStore.take();
         } catch (InterruptedException e) {
             throw new RuntimeException("takeLicense error", e);
         }
@@ -41,18 +40,23 @@ public class Repository {
 
     public static void putLicense(License license) {
         try {
-            licenses.put(license);
+            licensesStore.put(license);
+            if (license.getDigAllowed() == 5) {
+                Repository.incPaidLicenses();
+            } else {
+                Repository.incFreeLicenses();
+            }
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            throw new RuntimeException("putLicense error", e);
         }
     }
 
-    public static void putUsedLicense(License license) {
-        try {
-            licensesUsed.put(license);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+    public static void addMoney(Integer cash) {
+        wallet.add(cash);
+    }
+
+    public static Integer pollMoney() {
+        return wallet.poll();
     }
 
     public static Explored takeExplored() {
@@ -87,14 +91,17 @@ public class Repository {
                 + " Rich area = " + richArea.get()
                // + " MoneyError = " + moneyError.get()
                 + " MoneySuccess = " + moneySuccess.get()
+                + " Wallet size = " + wallet.size()
                 + " TreasureNotFound = " + treasureNotFound.get()
                 + " ExplorerSuccess = " + explorerSuccess.get()
                 + " Explored size1 = " + exploredAreas1.size()
                 + " Explored size2 = " + exploredAreas2.size()
                 + " DugFull = " + dugFull.size()
                 + " LicenseError size = " + licenseError.get()
-                + " Licenses size = " + licenses.size()
-                + " Licenses used size = " + licensesUsed.size();
+                + " LicensesStore = " + licensesStore.size()
+                + " PaidLicenses = " + paidLicenses.get()
+                + " FreeLicenses = " + freeLicenses.get();
+
     }
 
     public static int incDigSuccess() {
@@ -159,5 +166,13 @@ public class Repository {
 
     public static void incRichArea() {
         richArea.incrementAndGet();
+    }
+
+    public static void incPaidLicenses() {
+        paidLicenses.incrementAndGet();
+    }
+
+    public static void incFreeLicenses() {
+        freeLicenses.incrementAndGet();
     }
 }

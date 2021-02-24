@@ -37,8 +37,21 @@ public class Client {
                 .build();
     }
 
-    public HttpResponse<String> getNewLicense() throws IOException, InterruptedException {
-        return httpClient.send(newLicenseR, HttpResponse.BodyHandlers.ofString());
+    public HttpResponse<String> getNewLicense() throws IOException, InterruptedException, URISyntaxException {
+        var cash = Repository.pollMoney();
+        if (cash != null) {
+            return httpClient.send(createPaidLicenseRequest(cash), HttpResponse.BodyHandlers.ofString());
+        } else {
+            return httpClient.send(newLicenseR, HttpResponse.BodyHandlers.ofString());
+        }
+    }
+
+    private HttpRequest createPaidLicenseRequest(Integer cash) throws URISyntaxException {
+        return HttpRequest.newBuilder()
+                .uri(new URI(url + "/licenses"))
+                .headers(Const.CONTENT_TYPE, Const.APPLICATION_JSON)
+                .POST(HttpRequest.BodyPublishers.ofString("[" + cash + "]"))
+                .build();
     }
 
     public void dig(DigFull fullDig) {
@@ -76,10 +89,9 @@ public class Client {
                             }
                         } else {
                             if (license.getDigAllowed() > 0) {
-                                Repository.putUsedLicense(license);
+                                Repository.putLicense(license);
                             }
                         }
-
                     } else {
                         Repository.incDigError();
                         logger.error("Dig error = " + response.body() + fullDig);
@@ -95,6 +107,10 @@ public class Client {
         httpClient.sendAsync(httpRequest, HttpResponse.BodyHandlers.ofString())
                 .thenAcceptAsync(response -> {
                     if (response.statusCode() == Const.HTTP_OK) {
+                        var cash = JsonIterator.deserialize(response.body(), int[].class);
+                        for (int i : cash) {
+                            Repository.addMoney(i);
+                        }
                         if (Repository.incMoneySuccess() % 100 == 0) {
                             logger.error("Money = " + Repository.getActionsInfo());
                         }
