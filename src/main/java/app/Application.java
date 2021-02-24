@@ -3,15 +3,15 @@ package app;
 import app.client.Client;
 import app.client.Const;
 import app.client.Repository;
-import app.client.models.Area;
-import app.client.models.DigFull;
-import app.client.models.DigRq;
-import app.client.models.License;
+import app.client.models.*;
 import com.jsoniter.JsonIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.management.MBeanRegistration;
+import java.io.IOException;
 import java.net.URISyntaxException;
+import java.net.http.HttpResponse;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -51,8 +51,23 @@ public class Application {
             client.explore(new Area(3490, i, 1, 1));
         }
 
-        for (int i = 0; i < 3500; i++) {
-            for (int j = 0; j < 3500; j = j + STEP) {
+        Explored bestExplored = null;
+        Explored place ;//findBestPlace();
+        /*Explored line1 = findBestLine1();
+        Explored line2 = findBestLine2();
+        if (line1.getAmount() > line2.getAmount() && line1.getAmount() > place.getAmount()) {
+            bestExplored = line1;
+        } else if (line2.getAmount() > line1.getAmount() && line2.getAmount() > place.getAmount()) {
+            bestExplored = line2;
+        } else if (place.getAmount() > line1.getAmount() && place.getAmount() > line2.getAmount()) {
+            bestExplored = place;
+        }*/
+
+       // bestExplored = place;
+        Area area = new Area(0,0,3500,3500);//bestExplored.getArea();
+        logger.error("Run area = " + bestExplored);
+        for (int i = area.getPosX(); i < area.getPosX() + area.getSizeX(); i++) {
+            for (int j = area.getPosY(); j < area.getPosY() + area.getSizeY(); j = j + STEP) {
                 try {
                     Thread.sleep(1);
                     tryToGetMoney();
@@ -67,6 +82,88 @@ public class Application {
                 }
             }
         }
+        while (true) {
+            try {
+                Thread.sleep(1);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            tryToGetMoney();
+        }
+    }
+
+    private Explored findBestLine1() {
+        int size = 14;
+        Area area = new Area(0,0,0,3500);
+        Explored bestExplored = new Explored(area, 0);
+        for (int i = 0; i < 3500; i = i + size) {
+            area.setPosX(i);
+            area.setPosY(0);
+            area.setSizeX(size);
+            area.setSizeY(3500);
+            try {
+                HttpResponse<String> response = client.exploreBlocking(area);
+                var explored = JsonIterator.deserialize(response.body(), Explored.class);
+                if (explored.getAmount() > bestExplored.getAmount()) {
+                    //logger.error("Greater exp line = " + explored);
+                    bestExplored = explored;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        logger.error("Best expl line1 = " + bestExplored);
+        return bestExplored;
+    }
+
+    private Explored findBestLine2() {
+        int size = 14;
+        Area area = new Area(0,0,0,3500);
+        Explored bestExplored = new Explored(area, 0);
+        for (int i = 0; i < 3500; i = i + size) {
+            area.setPosX(0);
+            area.setPosY(i);
+            area.setSizeX(3500);
+            area.setSizeY(size);
+            try {
+                HttpResponse<String> response = client.exploreBlocking(area);
+                var explored = JsonIterator.deserialize(response.body(), Explored.class);
+                if (explored.getAmount() > bestExplored.getAmount()) {
+                    //logger.error("Greater exp line = " + explored);
+                    bestExplored = explored;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        logger.error("Best expl line2 = " + bestExplored);
+        return bestExplored;
+    }
+
+    private Explored findBestPlace() {
+        int size = 700;
+        Area area = new Area(0,0,3500,3500);
+        Explored bestExplored = new Explored(area, 0);
+        for (int i = 0; i < 3500; i = i + size) {
+            for (int j = 0; j < 3500; j = j + size) {
+                area.setPosX(i);
+                area.setPosY(j);
+                area.setSizeX(size);
+                area.setSizeY(size);
+                try {
+                    var response = client.exploreBlocking(area);
+                    var explored = JsonIterator.deserialize(response.body(), Explored.class);
+                    if (explored.getAmount() > bestExplored.getAmount()) {
+                        logger.error("Greater exp = " + explored);
+                        bestExplored = explored;
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        logger.error("Best expl = " + bestExplored);
+        return bestExplored;
     }
 
     private void tryToGetMoney() {

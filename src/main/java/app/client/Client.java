@@ -139,12 +139,16 @@ public class Client {
                         var explored = JsonIterator.deserialize(response.body(), Explored.class);
                         if (area.getSizeY() > 1 && explored.getAmount() > area.getSizeX() * area.getSizeY()) {
                             Repository.incRichArea();
-                            for (int i = 0; i < area.getSizeY(); i++) {
-                                explore(new Area(area.getPosX(), area.getPosY() + i, 1, 1));
+                            for (int i = 0; i < area.getSizeX(); i++) {
+                                for (int j = 0; j < area.getSizeY(); j++) {
+                                    explore(new Area(area.getPosX() + i, area.getPosY() + j, 1, 1));
+                                }
                             }
-                        } else if (area.getSizeY() > 1 && explored.getAmount() > 0 && Repository.exploredAreas1.size() < 100) {
-                            for (int i = 0; i < area.getSizeY(); i++) {
-                                explore(new Area(area.getPosX(), area.getPosY() + i, 1, 1));
+                        } else if (area.getSizeY() > 1 && explored.getAmount() > 0 && Repository.exploredAreas1.size() < 3500) {
+                            for (int i = 0; i < area.getSizeX(); i++) {
+                                for (int j = 0; j < area.getSizeY(); j++) {
+                                    explore(new Area(area.getPosX() + i, area.getPosY() + j, 1, 1));
+                                }
                             }
                         } else if (area.getSizeY() == 1 && explored.getAmount() > 0) {
                             Repository.addExplored(explored);
@@ -193,5 +197,9 @@ public class Client {
         } catch (URISyntaxException e) {
             throw new RuntimeException("createExploreRequest", e);
         }
+    }
+
+    public HttpResponse<String> exploreBlocking(Area area) throws IOException, InterruptedException {
+        return httpClient.send(createExploreRequest(area), HttpResponse.BodyHandlers.ofString());
     }
 }
