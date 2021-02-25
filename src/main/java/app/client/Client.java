@@ -94,6 +94,10 @@ public class Client {
                             if (license.getDigAllowed() > 0) {
                                 Repository.putLicense(license);
                             }
+                            if (amount > 1 && currentAmount.get() == amount) {
+                                Repository.richPlacesDone.incrementAndGet();
+                                logger.error("rich area = " + fullDig + Repository.getActionsInfo());
+                            }
                         }
                     } else {
                         Repository.incDigError();

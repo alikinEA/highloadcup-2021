@@ -8,16 +8,16 @@ import com.jsoniter.JsonIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.management.MBeanRegistration;
-import java.io.IOException;
 import java.net.URISyntaxException;
-import java.net.http.HttpResponse;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 public class Application {
-    private static final int STEP = 2;
+    private static final int STEP = 1;
     public static final int GRABTIEFE = 11;
 
     private static Logger logger = LoggerFactory.getLogger(Client.class);
@@ -29,7 +29,7 @@ public class Application {
     }
 
     public static void main(String[] args) throws URISyntaxException {
-        logger.error("Step ver6 = " + STEP + " GRABTIEFE = " + GRABTIEFE);
+        logger.error("Step ver11 = " + STEP + " GRABTIEFE = " + GRABTIEFE);
         var address = System.getenv("ADDRESS");
         //var address = "localhost";
         logger.error("ADDRESS = " + address);
@@ -47,12 +47,6 @@ public class Application {
         runLicenseReceiver();
         runDigger();
 
-        for (int i = 3490; i > 3400; i--) {
-            client.explore(new Area(3490, i, 1, 1));
-        }
-
-        Explored bestExplored = null;
-        Explored place ;//findBestPlace();
         /*Explored line1 = findBestLine1();
         Explored line2 = findBestLine2();
         if (line1.getAmount() > line2.getAmount() && line1.getAmount() > place.getAmount()) {
@@ -64,86 +58,78 @@ public class Application {
         }*/
 
        // bestExplored = place;
-        Area area = new Area(0,0,3500,3500);//bestExplored.getArea();
-        logger.error("Run area = " + bestExplored);
-        for (int i = area.getPosX(); i < area.getPosX() + area.getSizeX(); i++) {
-            for (int j = area.getPosY(); j < area.getPosY() + area.getSizeY(); j = j + STEP) {
-                try {
-                    Thread.sleep(1);
-                    tryToGetMoney();
-                    var exploreRequest = Repository.pollExploreRetry();
-                    if (exploreRequest != null) {
-                        client.explore(exploreRequest);
-                    } else {
-                        client.explore(new Area(i, j, 1, STEP));
+        //Collection<Explored> exploredCollection = List.of(new Explored(new Area(0, 0, 3500, 3500), 0));//
+        var explored700 = findBestPlaces1();
+        Collection<Explored> exploredCollection = findBestPlaces(false, explored700);
+        logger.error("FindBestPlaces size = " + exploredCollection.size());
+        exploredCollection.stream().limit(10).forEach(explored -> logger.error("Explored top 10 = " + explored));
+        exploredCollection.forEach(explored -> {
+            logger.error("Explored start = " + explored + Repository.getActionsInfo());
+            Area area = explored.getArea();
+            for (int i = area.getPosX(); i < area.getPosX() + area.getSizeX(); i++) {
+                for (int j = area.getPosY(); j < area.getPosY() + area.getSizeY(); j = j + STEP) {
+                    try {
+                        Thread.sleep(1);
+                        tryToGetMoney();
+                        var exploreRequest = Repository.pollExploreRetry();
+                        if (exploreRequest != null) {
+                            client.explore(exploreRequest);
+                        } else {
+                            client.explore(new Area(i, j, 1, STEP));
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
                     }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
                 }
             }
-        }
-        while (true) {
-            try {
-                Thread.sleep(1);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+        });
+       while(true) {
+           try {
+               Thread.sleep(1);
+           } catch (InterruptedException e) {
+               e.printStackTrace();
+           }
+           logger.error("Finish = " + Repository.getActionsInfo());
+       }
+    }
+
+    private Collection<Explored> findBestPlaces(boolean all, Explored explored700) {
+        var result = new ArrayList<Explored>();
+        if (all) {
+            result.add(new Explored(new Area(0, 0, 3500, 3500), 0));
+            return result;
+        } else {
+            int size = 35;
+            Area area = new Area();
+            for (int i = explored700.getArea().getPosX(); i < explored700.getArea().getPosX() + explored700.getArea().getSizeX(); i = i + size) {
+                for (int j = explored700.getArea().getPosY(); j < explored700.getArea().getPosY() + explored700.getArea().getSizeY(); j = j + size) {
+                    area.setPosX(i);
+                    area.setPosY(j);
+                    area.setSizeX(size);
+                    area.setSizeY(size);
+                    try {
+                        var response = client.exploreBlocking(area);
+                        while (response.statusCode() != Const.HTTP_OK) {
+                            response = client.exploreBlocking(area);
+                        }
+                        var explored = JsonIterator.deserialize(response.body(), Explored.class);
+                        result.add(explored);
+                    } catch (Exception e) {
+                        logger.error("find place err", e);
+                    }
+                }
             }
-            tryToGetMoney();
+
+            return result.stream()
+                    .sorted(Comparator.comparing(Explored::getAmount).reversed())
+                    .collect(Collectors.toList());
         }
     }
 
-    private Explored findBestLine1() {
-        int size = 14;
-        Area area = new Area(0,0,0,3500);
-        Explored bestExplored = new Explored(area, 0);
-        for (int i = 0; i < 3500; i = i + size) {
-            area.setPosX(i);
-            area.setPosY(0);
-            area.setSizeX(size);
-            area.setSizeY(3500);
-            try {
-                HttpResponse<String> response = client.exploreBlocking(area);
-                var explored = JsonIterator.deserialize(response.body(), Explored.class);
-                if (explored.getAmount() > bestExplored.getAmount()) {
-                    //logger.error("Greater exp line = " + explored);
-                    bestExplored = explored;
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        logger.error("Best expl line1 = " + bestExplored);
-        return bestExplored;
-    }
-
-    private Explored findBestLine2() {
-        int size = 14;
-        Area area = new Area(0,0,0,3500);
-        Explored bestExplored = new Explored(area, 0);
-        for (int i = 0; i < 3500; i = i + size) {
-            area.setPosX(0);
-            area.setPosY(i);
-            area.setSizeX(3500);
-            area.setSizeY(size);
-            try {
-                HttpResponse<String> response = client.exploreBlocking(area);
-                var explored = JsonIterator.deserialize(response.body(), Explored.class);
-                if (explored.getAmount() > bestExplored.getAmount()) {
-                    //logger.error("Greater exp line = " + explored);
-                    bestExplored = explored;
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        logger.error("Best expl line2 = " + bestExplored);
-        return bestExplored;
-    }
-
-    private Explored findBestPlace() {
+    private Explored findBestPlaces1() {
+        var result = new ArrayList<Explored>();
         int size = 700;
-        Area area = new Area(0,0,3500,3500);
-        Explored bestExplored = new Explored(area, 0);
+        Area area = new Area(0, 0, 3500, 3500);
         for (int i = 0; i < 3500; i = i + size) {
             for (int j = 0; j < 3500; j = j + size) {
                 area.setPosX(i);
@@ -152,18 +138,21 @@ public class Application {
                 area.setSizeY(size);
                 try {
                     var response = client.exploreBlocking(area);
-                    var explored = JsonIterator.deserialize(response.body(), Explored.class);
-                    if (explored.getAmount() > bestExplored.getAmount()) {
-                        logger.error("Greater exp = " + explored);
-                        bestExplored = explored;
+                    while (response.statusCode() != Const.HTTP_OK) {
+                        response = client.exploreBlocking(area);
                     }
+                    var explored = JsonIterator.deserialize(response.body(), Explored.class);
+                    logger.error("700 place = " + explored);
+                    result.add(explored);
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    logger.error("find place err", e);
                 }
             }
         }
-        logger.error("Best expl = " + bestExplored);
-        return bestExplored;
+
+        return result.stream()
+                .sorted(Comparator.comparing(Explored::getAmount).reversed())
+                .findFirst().get();
     }
 
     private void tryToGetMoney() {
@@ -185,7 +174,7 @@ public class Application {
                     var license = JsonIterator.deserialize(response.body(), License.class);
                     Repository.putLicenseNew(license);
                 } else {
-                    logger.error("Getting license error = " + response + Repository.getActionsInfo());
+                    //logger.error("Getting license error = " + response + Repository.getActionsInfo());
                     Repository.incLicenseErrors();
                 }
             }
