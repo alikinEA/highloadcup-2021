@@ -14,11 +14,11 @@ public class Repository {
     private static Logger logger = LoggerFactory.getLogger(Repository.class);
 
     private static final BlockingQueue<DigFull> dugFull = new LinkedBlockingDeque<>();
-    private static final BlockingQueue<License> licensesStore = new LinkedBlockingDeque<>(9);
+    private static final BlockingQueue<License> licensesStore = new LinkedBlockingDeque<>();
     private static final BlockingQueue<HttpRequest> moneyRetry = new LinkedBlockingDeque<>();
-    private static final BlockingQueue<ExploreFull> exploreRetry = new LinkedBlockingDeque<>();
-    public static final BlockingQueue<Explored> exploredAreas1 = new LinkedBlockingQueue<>(2000);
-    private static final BlockingQueue<Explored> exploredAreas2 = new LinkedBlockingQueue<>(500);
+    private static final BlockingQueue<HttpRequest> exploreRetry = new LinkedBlockingDeque<>();
+    public static final BlockingQueue<Explored> exploredAreas1 = new LinkedBlockingQueue<>(3500);
+    private static final BlockingQueue<Explored> exploredAreas2 = new LinkedBlockingQueue<>();
     private static final AtomicInteger digSuccess = new AtomicInteger(0);
     private static final AtomicInteger digMiss = new AtomicInteger(0);
     private static final AtomicInteger digError = new AtomicInteger(0);
@@ -169,11 +169,11 @@ public class Repository {
         return licenseError.incrementAndGet();
     }
 
-    public static void exploreRetry(ExploreFull request) {
+    public static void exploreRetry(HttpRequest request) {
         exploreRetry.add(request);
     }
 
-    public static ExploreFull pollExploreRetry() {
+    public static HttpRequest pollExploreRetry() {
         return exploreRetry.poll();
     }
 
