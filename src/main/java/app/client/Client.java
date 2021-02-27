@@ -129,14 +129,14 @@ public class Client {
                             if (area.getSizeX() == 1 && area.getSizeY() == 1) {
                                 Repository.addExplored(explored);
                             } else {
-                                if (explored.getAmount() > area.getSizeX() * area.getSizeY()) {
+                                if (explored.getAmount() > 1) {
                                     Repository.incRichArea();
                                     for (int x = 0; x < area.getSizeX(); x++) {
                                         for (int y = 0; y < area.getSizeY(); y++) {
                                             explore(new Area(area.getPosX() + x, area.getPosY() + y, 1, 1));
                                         }
                                     }
-                                } else if (explored.getAmount() > 0 && Repository.exploredAreas1.size() < 3500) {
+                                } else if (Repository.licensesStore.size() > 5 && explored.getAmount() > 0) {
                                     for (int x = 0; x < area.getSizeX(); x++) {
                                         for (int y = 0; y < area.getSizeY(); y++) {
                                             explore(new Area(area.getPosX() + x, area.getPosY() + y, 1, 1));

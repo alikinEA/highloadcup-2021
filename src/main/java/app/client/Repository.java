@@ -14,10 +14,10 @@ public class Repository {
     private static Logger logger = LoggerFactory.getLogger(Repository.class);
 
     private static final BlockingQueue<DigFull> dugFull = new LinkedBlockingDeque<>();
-    private static final BlockingQueue<License> licensesStore = new LinkedBlockingDeque<>();
+    public static final BlockingQueue<License> licensesStore = new LinkedBlockingDeque<>();
     private static final BlockingQueue<HttpRequest> moneyRetry = new LinkedBlockingDeque<>();
     private static final BlockingQueue<HttpRequest> exploreRetry = new LinkedBlockingDeque<>();
-    public static final BlockingQueue<Explored> exploredAreas1 = new LinkedBlockingQueue<>(3500);
+    public static final BlockingQueue<Explored> exploredAreas1 = new LinkedBlockingQueue<>();
     private static final BlockingQueue<Explored> exploredAreas2 = new LinkedBlockingQueue<>();
     private static final AtomicInteger digSuccess = new AtomicInteger(0);
     private static final AtomicInteger digMiss = new AtomicInteger(0);

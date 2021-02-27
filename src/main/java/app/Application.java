@@ -8,18 +8,18 @@ import com.jsoniter.JsonIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.management.MBeanRegistration;
-import java.io.IOException;
 import java.net.URISyntaxException;
-import java.net.http.HttpResponse;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 public class Application {
-    private static final int STEP = 2;
+    private static final int STEP = 3;
     public static final int GRABTIEFE = 11;
 
     private static Logger logger = LoggerFactory.getLogger(Client.class);
@@ -50,7 +50,7 @@ public class Application {
         runDigger();
 
 
-        Area area = new Area(0,0,3500,3500);//bestExplored.getArea();
+        Area area = new Area(0,0,3300,3300);//bestExplored.getArea();
         logger.error("start area = " + area);
         try {
             //logger.error("Single = " + client.exploreBlocking(area).body());
@@ -148,6 +148,37 @@ public class Application {
             }
         });
         logger.error("Digger has been started");
+    }
+
+    private Collection<Explored> explore5(int quantity) {
+        int limit = 50_000;
+        Collection<Explored> result = new ArrayList<>();
+        Area area = new Area(0,0,3500,3500);//findBestPlace().getArea();
+        logger.error("start area = " + area);
+        try {
+            int count = 0;
+            //logger.error("Single = " + client.exploreBlocking(area).body());
+            for (int x = area.getPosX(); x < area.getPosX() + area.getSizeX(); x++) {
+                for (int y = area.getPosY(); y < area.getPosY() + area.getSizeY(); y = y + quantity) {
+                    var response = client.exploreBlocking(new Area(x, y, 1, quantity));
+                    if (response.statusCode() == Const.HTTP_OK) {
+                        count++;
+                        if (count == limit) {
+                            return result.stream()
+                                    .sorted(Comparator.comparing(Explored::getAmount).reversed())
+                                    .collect(Collectors.toList());
+                        }
+                        var explored = JsonIterator.deserialize(response.body(), Explored.class);
+                        if (explored.getAmount() > 1) {
+                            result.add(explored);
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Error", e);
+        }
+        return result;
     }
 
     private void waitingForServer() {
