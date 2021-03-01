@@ -51,7 +51,8 @@ public class Application {
     private void run() {
         logger.error("Client has been started");
         waitingForServer();
-        runBackgroundTasks();
+        runBackgroundLicenses();
+        runBackgroundMoney();
         runDigger();
 
         try {
@@ -137,14 +138,14 @@ public class Application {
                 var responseF = client.exploreBlocking(area);
                 var response = responseF.get();
                 if (response.statusCode() != Const.HTTP_OK) {
-                    Thread.sleep(1);
+                    Thread.sleep(10);
                 } else {
                     Repository.incExplorerSuccess();
                     return JsonIterator.deserialize(response.body(), Explored.class);
                 }
             } catch (Exception e) {
                 try {
-                    Thread.sleep(1);
+                    Thread.sleep(10);
                 } catch (Exception e1) {
                 }
             }
@@ -159,13 +160,23 @@ public class Application {
         }
     }
 
-    private void runBackgroundTasks() {
+    private void runBackgroundMoney() {
         ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
-        executorService.scheduleAtFixedRate(() -> {
+        executorService.scheduleWithFixedDelay(() -> {
+            Repository.schedulerAttemptMoney.incrementAndGet();
             tryToGetMoney();
+            //logger.error("Background stat = " + Repository.getActionsInfo());
+        }, 1, 40, TimeUnit.MILLISECONDS);
+        logger.error("License receiver has been started");
+    }
+
+    private void runBackgroundLicenses() {
+        ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+        executorService.scheduleWithFixedDelay(() -> {
+            Repository.schedulerAttemptLicense.incrementAndGet();
             tryToGetLicense();
             logger.error("Background stat = " + Repository.getActionsInfo());
-        }, 1, 1, TimeUnit.MILLISECONDS);
+        }, 1, 30, TimeUnit.MILLISECONDS);
         logger.error("License receiver has been started");
     }
 
@@ -174,15 +185,11 @@ public class Application {
             var cash = Repository.pollMoney();
             if (cash != null) {
                 try {
-                    var response = client.getNewPaidLicense(cash);
-                    if (response.statusCode() != Const.HTTP_OK) {
-                        Repository.addMoney(cash);
-                    } else {
-                        var license = JsonIterator.deserialize(response.body(), License.class);
-                        Repository.putLicenseNew(license);
-                    }
+                    client.getNewPaidLicenseAsync(cash);
                 } catch (Exception e) {
                     Repository.addMoney(cash);
+                    Repository.incLicenseErrors();
+                    logger.error("license error1 = " + Repository.getActionsInfo(), e);
                 }
             } else {
                 var response = client.getNewFreeLicense();
@@ -193,7 +200,7 @@ public class Application {
             }
         } catch (Exception e) {
             Repository.incLicenseErrors();
-            //logger.error("license error = ", e);
+            logger.error("license error2 = " + Repository.getActionsInfo(), e);
         }
     }
 
@@ -201,6 +208,7 @@ public class Application {
         ExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
         executorService.submit(() -> {
             while (true) {
+                Thread.sleep(10);
                 var digFull = Repository.pollDugFull();
                 if (digFull != null) {
                     var license = Repository.takeLicense();

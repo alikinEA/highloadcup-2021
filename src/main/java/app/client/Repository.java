@@ -40,6 +40,10 @@ public class Repository {
     public static final AtomicInteger skipped5_1 = new AtomicInteger(0);
     public static final AtomicInteger licenseFull = new AtomicInteger(0);
 
+    public static final AtomicInteger licenseAttempt = new AtomicInteger(0);
+    public static final AtomicInteger schedulerAttemptLicense = new AtomicInteger(0);
+    public static final AtomicInteger schedulerAttemptMoney = new AtomicInteger(0);
+
     public static License takeLicense() {
         try {
             return licensesStore.take();
@@ -128,7 +132,10 @@ public class Repository {
                 + " Skipped5 " + skipped5.get()
                 + " Skipped5_1 " + skipped5_1.get()
                 + " skipped50 " + skipped50.get()
-                + " licenseFull " + licenseFull.get();
+                + " licenseFull " + licenseFull.get()
+                + " getLicenseAttempt " + licenseAttempt.get()
+                + " schedulerAttemptMoney " + schedulerAttemptMoney.get()
+                + " schedulerAttemptLicense " + schedulerAttemptLicense.get();
     }
 
     public static int incDigSuccess() {

@@ -59,7 +59,7 @@ public class Client {
             if (response.statusCode() == Const.HTTP_OK) {
                 currentAmount.incrementAndGet();
                 Repository.incDigSuccess();
-                logger.error("Dig success = " + fullDig + Repository.getActionsInfo());
+                //logger.error("Dig success = " + fullDig + Repository.getActionsInfo());
                 var treasures = JsonIterator.deserialize(response.body(), String[].class);
                 for (int i = 0; i < treasures.length; i++) {
                     getMyMoney(treasures[i]);
@@ -97,6 +97,7 @@ public class Client {
         httpClient.sendAsync(httpRequest, HttpResponse.BodyHandlers.ofString())
                 .thenAcceptAsync(response -> {
                     if (response.statusCode() == Const.HTTP_OK) {
+                        Repository.incMoneySuccess();
                         if (Repository.wallet.size() > 50_000) {
                             return;
                         }
@@ -149,15 +150,28 @@ public class Client {
         }
     }
 
-    public CompletableFuture<HttpResponse<String>> exploreBlocking(HttpRequest request) throws IOException, InterruptedException {
+    public CompletableFuture<HttpResponse<String>> exploreBlocking(HttpRequest request) {
         return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString());
     }
-    public CompletableFuture<HttpResponse<String>> exploreBlocking(Area area) throws IOException, InterruptedException {
+    public CompletableFuture<HttpResponse<String>> exploreBlocking(Area area) {
         return exploreBlocking(createExploreRequest(area));
     }
 
     public HttpResponse<String> getNewPaidLicense(Integer cash) throws URISyntaxException, IOException, InterruptedException {
         return httpClient.send(createPaidLicenseRequest(cash), HttpResponse.BodyHandlers.ofString());
+    }
+
+    public void getNewPaidLicenseAsync(Integer cash) throws URISyntaxException, IOException, InterruptedException {
+        httpClient.sendAsync(createPaidLicenseRequest(cash), HttpResponse.BodyHandlers.ofString())
+                .thenAcceptAsync(response -> {
+                    Repository.licenseAttempt.incrementAndGet();
+                    if (response.statusCode() != Const.HTTP_OK) {
+                        Repository.addMoney(cash);
+                    } else {
+                        var license = JsonIterator.deserialize(response.body(), License.class);
+                        Repository.putLicenseNew(license);
+                    }
+                    }, responseEx);
     }
 
     public HttpResponse<String> getNewFreeLicense() throws IOException, InterruptedException {
