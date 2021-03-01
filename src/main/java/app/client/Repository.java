@@ -16,7 +16,6 @@ public class Repository {
     private static final BlockingQueue<DigFull> dugFull = new LinkedBlockingDeque<>();
     public static final BlockingQueue<License> licensesStore = new LinkedBlockingDeque<>();
     private static final BlockingQueue<HttpRequest> moneyRetry = new LinkedBlockingDeque<>();
-    private static final BlockingQueue<HttpRequest> exploreRetry = new LinkedBlockingDeque<>();
     public static final BlockingQueue<Explored> exploredAreas1 = new LinkedBlockingQueue<>();
     private static final BlockingQueue<Explored> exploredAreas2 = new LinkedBlockingQueue<>();
     private static final AtomicInteger digSuccess = new AtomicInteger(0);
@@ -31,9 +30,15 @@ public class Repository {
     public static final AtomicInteger richPlacesDone = new AtomicInteger(0);
     private static final AtomicInteger richArea = new AtomicInteger(0);
 
-    private static final BlockingQueue<Integer> wallet = new LinkedBlockingDeque<>();
+    public static final BlockingQueue<Integer> wallet = new LinkedBlockingDeque<>(1_000_000);
     private static final AtomicInteger paidLicenses = new AtomicInteger(0);
     private static final AtomicInteger freeLicenses = new AtomicInteger(0);
+
+    public static final AtomicInteger skipped25 = new AtomicInteger(0);
+    public static final AtomicInteger skipped5 = new AtomicInteger(0);
+    public static final AtomicInteger skipped50 = new AtomicInteger(0);
+    public static final AtomicInteger skipped5_1 = new AtomicInteger(0);
+    public static final AtomicInteger licenseFull = new AtomicInteger(0);
 
     public static License takeLicense() {
         try {
@@ -58,6 +63,9 @@ public class Repository {
     public static void putLicense(License license) {
         try {
             licensesStore.put(license);
+            if (licensesStore.size() == 10) {
+                Repository.licenseFull.incrementAndGet();
+            }
         } catch (InterruptedException e) {
             throw new RuntimeException("putLicense error", e);
         }
@@ -84,6 +92,9 @@ public class Repository {
     }
 
     public static void addExplored(Explored explored) {
+        if (explored.getAmount() == 0) {
+            incTreasureNotFound();
+        }
         if (explored.getAmount() == 1) {
             if (exploredAreas1.size() < 100) {
                 exploredAreas1.add(explored);
@@ -98,7 +109,6 @@ public class Repository {
         return "Actions info: DigSuccess = " + digSuccess.get()
                 + " DigError = " + digError.get()
                 + " DigMiss = " + digMiss.get()
-                + " Explore retry = " + exploreRetry.size()
                 + " Rich places = " + richPlaces.get()
                 + " Rich area = " + richArea.get()
                 + " RichPlacesDone" + richPlacesDone.get()
@@ -113,8 +123,12 @@ public class Repository {
                 + " LicenseError size = " + licenseError.get()
                 + " LicensesStore = " + licensesStore.size()
                 + " PaidLicenses = " + paidLicenses.get()
-                + " FreeLicenses = " + freeLicenses.get();
-
+                + " FreeLicenses = " + freeLicenses.get()
+                + " Skipped25 " + skipped25.get()
+                + " Skipped5 " + skipped5.get()
+                + " Skipped5_1 " + skipped5_1.get()
+                + " skipped50 " + skipped50.get()
+                + " licenseFull " + licenseFull.get();
     }
 
     public static int incDigSuccess() {
@@ -167,14 +181,6 @@ public class Repository {
 
     public static int incLicenseErrors() {
         return licenseError.incrementAndGet();
-    }
-
-    public static void exploreRetry(HttpRequest request) {
-        exploreRetry.add(request);
-    }
-
-    public static HttpRequest pollExploreRetry() {
-        return exploreRetry.poll();
     }
 
     public static void incRichArea() {

@@ -8,7 +8,9 @@ import com.jsoniter.JsonIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
+import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -19,7 +21,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class Application {
-    private static final int STEP = 3;
+    private static final int STEP1 = 25;
+    private static final int STEP2 = 5;
+    private static final int STEP3 = 2;
+    private static final int STEP4 = 3;
     public static final int GRABTIEFE = 11;
 
     private static Logger logger = LoggerFactory.getLogger(Client.class);
@@ -31,7 +36,7 @@ public class Application {
     }
 
     public static void main(String[] args) throws URISyntaxException {
-        logger.error("Step = " + STEP + " GRABTIEFE = " + GRABTIEFE);
+        logger.error("Step = " + STEP1 + " GRABTIEFE = " + GRABTIEFE);
         var address = System.getenv("ADDRESS");
 
         logger.error("ADDRESS = " + address);
@@ -49,27 +54,101 @@ public class Application {
         runBackgroundTasks();
         runDigger();
 
-
-        Area area = new Area(0,0,3300,3300);//bestExplored.getArea();
-        logger.error("start area = " + area);
         try {
             //logger.error("Single = " + client.exploreBlocking(area).body());
-            for (int x = area.getPosX(); x < area.getPosX() + area.getSizeX(); x++) {
-                for (int y = area.getPosY(); y < area.getPosY() + area.getSizeY(); y = y + STEP) {
-                    Thread.sleep(1);
-                    client.explore(new Area(x, y, 1, STEP));
-                    /*var response = client.exploreBlocking(new Area(x, y, 1, 1));
-                    var explored = JsonIterator.deserialize(response.body(), Explored.class);
-                    logger.error("Explored = " + explored + Repository.getActionsInfo());
-                    if (explored.getAmount() > 0) {
-                        Repository.addExplored(explored);
-                    }*/
+            for (int x1 = 0; x1 < 3500; x1++) {
+                for (int y1 = 0; y1 < 3500; y1 = y1 + STEP1) {
+                    var explored = doExplore(new Area(x1, y1, 1, STEP1));
+
+                    if (explored.getAmount() > 1) {
+                        Explored maxAmount = doExplore(new Area(x1, y1, 1, STEP2));
+                        if (maxAmount.getAmount() == explored.getAmount()) {
+                            findTreasure5(maxAmount);
+                            Repository.skipped5.incrementAndGet();
+                            continue;
+                        }
+                        for (int i = 5; i < 25; i = i + STEP2) {
+                            var explored_5 = doExplore(new Area(x1, y1 + i, 1, STEP2));
+                            if (explored_5.getAmount() == explored.getAmount()) {
+                                maxAmount = explored_5;
+                                Repository.skipped5_1.incrementAndGet();
+                                break;
+                            } else if (explored_5.getAmount() > maxAmount.getAmount()) {
+                                maxAmount = explored_5;
+                            }
+                        }
+                        if (maxAmount.getAmount() == 0) {
+                            Repository.incTreasureNotFound();
+                            throw new RuntimeException("error find 5");
+                        } else {
+                            findTreasure5(maxAmount);
+                        }
+                    } else {
+                        Repository.skipped25.incrementAndGet();
+                    }
                 }
             }
         } catch (Exception e) {
             logger.error("Error", e);
         }
 
+    }
+
+    private void findTreasure5(Explored explored5) {
+        var explored2_1 = doExplore(new Area(explored5.getArea().getPosX(), explored5.getArea().getPosY(), 1, 2));
+        if (explored2_1.getAmount() == explored5.getAmount()) {
+            findThreasure2(explored2_1);
+        } else {
+            var explored2_2 = doExplore(new Area(explored5.getArea().getPosX(), explored5.getArea().getPosY() + 2, 1, 2));
+            if (explored2_1.getAmount() == explored5.getAmount()) {
+                findThreasure2(explored2_1);
+            } else {
+                if (explored2_1.getAmount() == 0 && explored2_2.getAmount() == 0) {
+                    var explored2_3 = doExplore(new Area(explored5.getArea().getPosX(), explored5.getArea().getPosY() + 4, 1, 1));
+                    Repository.addExplored(explored2_3);
+                } else {
+                    if (explored2_1.getAmount() > explored2_2.getAmount()) {
+                        findThreasure2(explored2_1);
+                    } else {
+                        findThreasure2(explored2_2);
+                    }
+                }
+            }
+        }
+    }
+
+    private void findThreasure2(Explored explored2) {
+        var explored1_1 = doExplore(new Area(explored2.getArea().getPosX(), explored2.getArea().getPosY(), 1, 1));
+        if (explored1_1.getAmount() > 0) {
+            Repository.addExplored(explored1_1);
+        } else {
+            var explored1_2 = doExplore(new Area(explored2.getArea().getPosX(), explored2.getArea().getPosY() + 1, 1, 1));
+            if (explored1_2.getAmount() == 0) {
+                Repository.incTreasureNotFound();
+            } else {
+                Repository.addExplored(explored1_2);
+            }
+        }
+    }
+
+    private Explored doExplore(Area area) {
+        while (true) {
+            try {
+                var responseF = client.exploreBlocking(area);
+                var response = responseF.get();
+                if (response.statusCode() != Const.HTTP_OK) {
+                    Thread.sleep(1);
+                } else {
+                    Repository.incExplorerSuccess();
+                    return JsonIterator.deserialize(response.body(), Explored.class);
+                }
+            } catch (Exception e) {
+                try {
+                    Thread.sleep(1);
+                } catch (Exception e1) {
+                }
+            }
+        }
     }
 
     private void tryToGetMoney() {
@@ -85,17 +164,9 @@ public class Application {
         executorService.scheduleAtFixedRate(() -> {
             tryToGetMoney();
             tryToGetLicense();
-            tryToExploreRetry();
             logger.error("Background stat = " + Repository.getActionsInfo());
         }, 1, 1, TimeUnit.MILLISECONDS);
         logger.error("License receiver has been started");
-    }
-
-    private void tryToExploreRetry() {
-        var exploreRequest = Repository.pollExploreRetry();
-        if (exploreRequest != null) {
-            client.explore(exploreRequest);
-        }
     }
 
     private void tryToGetLicense() {
@@ -150,37 +221,6 @@ public class Application {
         logger.error("Digger has been started");
     }
 
-    private Collection<Explored> explore5(int quantity) {
-        int limit = 50_000;
-        Collection<Explored> result = new ArrayList<>();
-        Area area = new Area(0,0,3500,3500);//findBestPlace().getArea();
-        logger.error("start area = " + area);
-        try {
-            int count = 0;
-            //logger.error("Single = " + client.exploreBlocking(area).body());
-            for (int x = area.getPosX(); x < area.getPosX() + area.getSizeX(); x++) {
-                for (int y = area.getPosY(); y < area.getPosY() + area.getSizeY(); y = y + quantity) {
-                    var response = client.exploreBlocking(new Area(x, y, 1, quantity));
-                    if (response.statusCode() == Const.HTTP_OK) {
-                        count++;
-                        if (count == limit) {
-                            return result.stream()
-                                    .sorted(Comparator.comparing(Explored::getAmount).reversed())
-                                    .collect(Collectors.toList());
-                        }
-                        var explored = JsonIterator.deserialize(response.body(), Explored.class);
-                        if (explored.getAmount() > 1) {
-                            result.add(explored);
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            logger.error("Error", e);
-        }
-        return result;
-    }
-
     private void waitingForServer() {
         while(true) {
             try {
@@ -196,31 +236,5 @@ public class Application {
 
             }
         }
-    }
-
-    private Explored findBestPlace() {
-        int size = 700;
-        Area area = new Area(0,0,3500,3500);
-        Explored bestExplored = new Explored(area, 0);
-        for (int i = 0; i < 3500; i = i + size) {
-            for (int j = 0; j < 3500; j = j + size) {
-                area.setPosX(i);
-                area.setPosY(j);
-                area.setSizeX(size);
-                area.setSizeY(size);
-                try {
-                    var response = client.exploreBlocking(area);
-                    var explored = JsonIterator.deserialize(response.body(), Explored.class);
-                    if (explored.getAmount() > bestExplored.getAmount()) {
-                        logger.error("Greater exp = " + explored);
-                        bestExplored = explored;
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        logger.error("Best expl = " + bestExplored);
-        return bestExplored;
     }
 }

@@ -13,6 +13,7 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -20,8 +21,8 @@ public class Client {
     private static Logger logger = LoggerFactory.getLogger(Client.class);
 
     private final String url;
-    private final ExecutorService responseEx = Executors.newFixedThreadPool(2);
-    private final ExecutorService requestEx = Executors.newFixedThreadPool(2);
+    private final ExecutorService responseEx = Executors.newFixedThreadPool(3);
+    private final ExecutorService requestEx = Executors.newFixedThreadPool(3);
     private final HttpRequest newLicenseR;
 
     private final HttpClient httpClient = HttpClient.newBuilder()
@@ -96,60 +97,18 @@ public class Client {
         httpClient.sendAsync(httpRequest, HttpResponse.BodyHandlers.ofString())
                 .thenAcceptAsync(response -> {
                     if (response.statusCode() == Const.HTTP_OK) {
+                        if (Repository.wallet.size() > 50_000) {
+                            return;
+                        }
                         var cash = JsonIterator.deserialize(response.body(), int[].class);
                         for (int i : cash) {
                             Repository.addMoney(i);
-                        }
-                        if (Repository.incMoneySuccess() % 100 == 0) {
-                            //logger.error("Money = " + Repository.getActionsInfo());
                         }
                     } else if (response.statusCode() == Const.HTTP_SERVICE_UNAVAILABLE) {
                         Repository.incMoneyError();
                         Repository.addMoneyRetry(response.request());
                     } else {
                         logger.error("Money error = " + response.body());
-                    }
-                }, responseEx);
-    }
-
-    public void explore(Area area) {
-        explore(createExploreRequest(area));
-    }
-
-    public void explore(HttpRequest request) {
-        httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-                .thenAcceptAsync(response -> {
-                    if (response.statusCode() == Const.HTTP_OK) {
-                        Repository.incExplorerSuccess();
-                        var explored = JsonIterator.deserialize(response.body(), Explored.class);
-                        var area = explored.getArea();
-                        logger.error("Explored = " + explored + Repository.getActionsInfo());
-
-                        if (explored.getAmount() > 0) {
-                            if (area.getSizeX() == 1 && area.getSizeY() == 1) {
-                                Repository.addExplored(explored);
-                            } else {
-                                if (explored.getAmount() > 1) {
-                                    Repository.incRichArea();
-                                    for (int x = 0; x < area.getSizeX(); x++) {
-                                        for (int y = 0; y < area.getSizeY(); y++) {
-                                            explore(new Area(area.getPosX() + x, area.getPosY() + y, 1, 1));
-                                        }
-                                    }
-                                } else if (Repository.licensesStore.size() > 5 && explored.getAmount() > 0) {
-                                    for (int x = 0; x < area.getSizeX(); x++) {
-                                        for (int y = 0; y < area.getSizeY(); y++) {
-                                            explore(new Area(area.getPosX() + x, area.getPosY() + y, 1, 1));
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    } else if (response.statusCode() == Const.RATE_LIMIT) {
-                        Repository.exploreRetry(response.request());
-                        //logger.error("explore error = " + response.body());
-                    } else {
-                        logger.error("explore error = " + response.body());
                     }
                 }, responseEx);
     }
@@ -190,8 +149,11 @@ public class Client {
         }
     }
 
-    public HttpResponse<String> exploreBlocking(Area area) throws IOException, InterruptedException {
-        return httpClient.send(createExploreRequest(area), HttpResponse.BodyHandlers.ofString());
+    public CompletableFuture<HttpResponse<String>> exploreBlocking(HttpRequest request) throws IOException, InterruptedException {
+        return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString());
+    }
+    public CompletableFuture<HttpResponse<String>> exploreBlocking(Area area) throws IOException, InterruptedException {
+        return exploreBlocking(createExploreRequest(area));
     }
 
     public HttpResponse<String> getNewPaidLicense(Integer cash) throws URISyntaxException, IOException, InterruptedException {
