@@ -105,8 +105,7 @@ public class Application {
                 findThreasure2(explored2_1);
             } else {
                 if (explored2_1.getAmount() == 0 && explored2_2.getAmount() == 0) {
-                    var explored2_3 = doExplore(new Area(explored5.getArea().getPosX(), explored5.getArea().getPosY() + 4, 1, 1));
-                    Repository.addExplored(explored2_3);
+                    client.exploreAsync(new Area(explored5.getArea().getPosX(), explored5.getArea().getPosY() + 4, 1, 1));
                 } else {
                     if (explored2_1.getAmount() > explored2_2.getAmount()) {
                         findThreasure2(explored2_1);
@@ -123,12 +122,7 @@ public class Application {
         if (explored1_1.getAmount() > 0) {
             Repository.addExplored(explored1_1);
         } else {
-            var explored1_2 = doExplore(new Area(explored2.getArea().getPosX(), explored2.getArea().getPosY() + 1, 1, 1));
-            if (explored1_2.getAmount() == 0) {
-                Repository.incTreasureNotFound();
-            } else {
-                Repository.addExplored(explored1_2);
-            }
+            client.exploreAsync(new Area(explored2.getArea().getPosX(), explored2.getArea().getPosY() + 1, 1, 1));
         }
     }
 
@@ -166,7 +160,7 @@ public class Application {
             Repository.schedulerAttemptMoney.incrementAndGet();
             tryToGetMoney();
             //logger.error("Background stat = " + Repository.getActionsInfo());
-        }, 1, 40, TimeUnit.MILLISECONDS);
+        }, 1, 100, TimeUnit.MILLISECONDS);
         logger.error("License receiver has been started");
     }
 
@@ -205,27 +199,25 @@ public class Application {
     }
 
     private void runDigger() {
-        ExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
-        executorService.submit(() -> {
-            while (true) {
-                Thread.sleep(10);
-                var digFull = Repository.pollDugFull();
-                if (digFull != null) {
-                    var license = Repository.takeLicense();
-                    digFull.getDigRq().setLicenseID(license.getId());
-                    digFull.setLicense(license);
-                    //logger.error("Dug one more time = " + digFull + Repository.getActionsInfo());
-                    client.digBlocking(digFull);
-                } else {
-                    var license = Repository.takeLicense();
-                    var explored = Repository.takeExplored();
-                    var exploredArea = explored.getArea();
-                    //logger.error("Take license = " + license);
-                    var digRq = new DigRq(license.getId(), exploredArea.getPosX(), exploredArea.getPosY(), 1);
-                    client.digBlocking(new DigFull(digRq, explored.getAmount(), 0, license));
-                }
+        ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+        executorService.scheduleWithFixedDelay(() -> {
+            var digFull = Repository.pollDugFull();
+            if (digFull != null) {
+                var license = Repository.takeLicense();
+                digFull.getDigRq().setLicenseID(license.getId());
+                digFull.setLicense(license);
+                //logger.error("Dug one more time = " + digFull + Repository.getActionsInfo());
+                client.digBlocking(digFull);
+            } else {
+                var license = Repository.takeLicense();
+                var explored = Repository.takeExplored();
+                var exploredArea = explored.getArea();
+                //logger.error("Take license = " + license);
+                var digRq = new DigRq(license.getId(), exploredArea.getPosX(), exploredArea.getPosY(), 1);
+                client.digBlocking(new DigFull(digRq, explored.getAmount(), 0, license));
             }
-        });
+
+        }, 1, 1, TimeUnit.MILLISECONDS);
         logger.error("Digger has been started");
     }
 

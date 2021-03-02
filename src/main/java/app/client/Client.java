@@ -21,8 +21,8 @@ public class Client {
     private static Logger logger = LoggerFactory.getLogger(Client.class);
 
     private final String url;
-    private final ExecutorService responseEx = Executors.newFixedThreadPool(3);
-    private final ExecutorService requestEx = Executors.newFixedThreadPool(3);
+    private final ExecutorService responseEx = Executors.newFixedThreadPool(2);
+    private final ExecutorService requestEx = Executors.newFixedThreadPool(2);
     private final HttpRequest newLicenseR;
 
     private final HttpClient httpClient = HttpClient.newBuilder()
@@ -45,47 +45,51 @@ public class Client {
                 .build();
     }
 
-    public void digBlocking(DigFull fullDig) throws IOException, InterruptedException {
-        var response = httpClient.send(createDigRequest(fullDig.getDigRq()), HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() == Const.HTTP_OK || response.statusCode() == Const.HTTP_NOT_FOUND) {
-            var license = fullDig.getLicense();
-            var digRq = fullDig.getDigRq();
-            var amount = fullDig.getAmount();
-            var currentAmount = fullDig.getCurrentAmount();
+    public void digBlocking(DigFull fullDig) {
+        try {
+            var response = httpClient.send(createDigRequest(fullDig.getDigRq()), HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == Const.HTTP_OK || response.statusCode() == Const.HTTP_NOT_FOUND) {
+                var license = fullDig.getLicense();
+                var digRq = fullDig.getDigRq();
+                var amount = fullDig.getAmount();
+                var currentAmount = fullDig.getCurrentAmount();
 
-            license.setDigAllowed(license.getDigAllowed() - 1);
-            digRq.setDepth(digRq.getDepth() + 1);
+                license.setDigAllowed(license.getDigAllowed() - 1);
+                digRq.setDepth(digRq.getDepth() + 1);
 
-            if (response.statusCode() == Const.HTTP_OK) {
-                currentAmount.incrementAndGet();
-                Repository.incDigSuccess();
-                //logger.error("Dig success = " + fullDig + Repository.getActionsInfo());
-                var treasures = JsonIterator.deserialize(response.body(), String[].class);
-                for (int i = 0; i < treasures.length; i++) {
-                    getMyMoney(treasures[i]);
-                }
-            } else {
-                Repository.incDigMiss();
-            }
-            if (digRq.getDepth() == Application.GRABTIEFE && currentAmount.get() < amount) {
-                Repository.incTreasureNotFound();
-                //logger.error("Dug 10 time = " + fullDig + Repository.getActionsInfo());
-            }
-
-            if (digRq.getDepth() < Application.GRABTIEFE && currentAmount.get() < amount) {
-                if (license.getDigAllowed() > 0) {
-                    digBlocking(fullDig);
+                if (response.statusCode() == Const.HTTP_OK) {
+                    currentAmount.incrementAndGet();
+                    Repository.incDigSuccess();
+                    //logger.error("Dig success = " + fullDig + Repository.getActionsInfo());
+                    var treasures = JsonIterator.deserialize(response.body(), String[].class);
+                    for (int i = 0; i < treasures.length; i++) {
+                        getMyMoney(treasures[i]);
+                    }
                 } else {
-                    Repository.addDugFull(fullDig);
+                    Repository.incDigMiss();
+                }
+                if (digRq.getDepth() == Application.GRABTIEFE && currentAmount.get() < amount) {
+                    Repository.incTreasureNotFound();
+                    //logger.error("Dug 10 time = " + fullDig + Repository.getActionsInfo());
+                }
+
+                if (digRq.getDepth() < Application.GRABTIEFE && currentAmount.get() < amount) {
+                    if (license.getDigAllowed() > 0) {
+                        digBlocking(fullDig);
+                    } else {
+                        Repository.addDugFull(fullDig);
+                    }
+                } else {
+                    if (license.getDigAllowed() > 0) {
+                        Repository.putLicense(license);
+                    }
                 }
             } else {
-                if (license.getDigAllowed() > 0) {
-                    Repository.putLicense(license);
-                }
+                Repository.incDigError();
+                logger.error("Dig error = " + response.body() + fullDig);
             }
-        } else {
+        } catch (Exception e) {
             Repository.incDigError();
-            logger.error("Dig error = " + response.body() + fullDig);
         }
     }
 
@@ -157,10 +161,6 @@ public class Client {
         return exploreBlocking(createExploreRequest(area));
     }
 
-    public HttpResponse<String> getNewPaidLicense(Integer cash) throws URISyntaxException, IOException, InterruptedException {
-        return httpClient.send(createPaidLicenseRequest(cash), HttpResponse.BodyHandlers.ofString());
-    }
-
     public void getNewPaidLicenseAsync(Integer cash) throws URISyntaxException, IOException, InterruptedException {
         httpClient.sendAsync(createPaidLicenseRequest(cash), HttpResponse.BodyHandlers.ofString())
                 .thenAcceptAsync(response -> {
@@ -178,4 +178,18 @@ public class Client {
         return httpClient.send(newLicenseR, HttpResponse.BodyHandlers.ofString());
     }
 
+    public void exploreAsync(Area area) {
+        httpClient.sendAsync(createExploreRequest(area), HttpResponse.BodyHandlers.ofString())
+                .thenAcceptAsync(response -> {
+                    if (response.statusCode() == Const.HTTP_OK) {
+                        var explored = JsonIterator.deserialize(response.body(), Explored.class);
+                        if (explored.getAmount() > 0) {
+                            Repository.addExplored(explored);
+                            Repository.incExplorerSuccess();
+                        }
+                    } else {
+                        Repository.incExplorerError();
+                    }
+                }, responseEx);
+    }
 }

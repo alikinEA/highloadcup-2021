@@ -1,8 +1,6 @@
 package app.client;
 
 import app.client.models.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.http.HttpRequest;
 import java.util.concurrent.BlockingQueue;
@@ -11,8 +9,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Repository {
-    private static Logger logger = LoggerFactory.getLogger(Repository.class);
-
     private static final BlockingQueue<DigFull> dugFull = new LinkedBlockingDeque<>();
     public static final BlockingQueue<License> licensesStore = new LinkedBlockingDeque<>();
     private static final BlockingQueue<HttpRequest> moneyRetry = new LinkedBlockingDeque<>();
@@ -27,8 +23,7 @@ public class Repository {
     private static final AtomicInteger treasureNotFound = new AtomicInteger(0);
     private static final AtomicInteger licenseError = new AtomicInteger(0);
     private static final AtomicInteger richPlaces = new AtomicInteger(0);
-    public static final AtomicInteger richPlacesDone = new AtomicInteger(0);
-    private static final AtomicInteger richArea = new AtomicInteger(0);
+    private static final AtomicInteger places = new AtomicInteger(0);
 
     public static final BlockingQueue<Integer> wallet = new LinkedBlockingDeque<>(1_000_000);
     private static final AtomicInteger paidLicenses = new AtomicInteger(0);
@@ -44,6 +39,9 @@ public class Repository {
     public static final AtomicInteger schedulerAttemptLicense = new AtomicInteger(0);
     public static final AtomicInteger schedulerAttemptMoney = new AtomicInteger(0);
 
+    public static final AtomicInteger explorerError = new AtomicInteger(0);
+
+
     public static License takeLicense() {
         try {
             return licensesStore.take();
@@ -54,9 +52,6 @@ public class Repository {
 
     public static void putLicenseNew(License license) {
         putLicense(license);
-        if (licensesStore.size() > 8) {
-            logger.error("License store is full (8)");
-        }
         if (license.getDigAllowed() == 5) {
             paidLicenses.incrementAndGet();
         } else {
@@ -100,9 +95,8 @@ public class Repository {
             incTreasureNotFound();
         }
         if (explored.getAmount() == 1) {
-            if (exploredAreas1.size() < 100) {
-                exploredAreas1.add(explored);
-            }
+            places.incrementAndGet();
+            exploredAreas1.add(explored);
         } else {
             richPlaces.incrementAndGet();
             exploredAreas2.add(explored);
@@ -114,13 +108,13 @@ public class Repository {
                 + " DigError = " + digError.get()
                 + " DigMiss = " + digMiss.get()
                 + " Rich places = " + richPlaces.get()
-                + " Rich area = " + richArea.get()
-                + " RichPlacesDone" + richPlacesDone.get()
+                + " Places = " + places.get()
                // + " MoneyError = " + moneyError.get()
                 + " MoneySuccess = " + moneySuccess.get()
                 + " Wallet size = " + wallet.size()
                 + " TreasureNotFound = " + treasureNotFound.get()
                 + " ExplorerSuccess = " + explorerSuccess.get()
+                + " ExplorerErrors = " + explorerError.get()
                 + " Explored size1 = " + exploredAreas1.size()
                 + " Explored size2 = " + exploredAreas2.size()
                 + " DugFull = " + dugFull.size()
@@ -190,7 +184,7 @@ public class Repository {
         return licenseError.incrementAndGet();
     }
 
-    public static void incRichArea() {
-        richArea.incrementAndGet();
+    public static void incExplorerError() {
+        explorerError.incrementAndGet();
     }
 }
