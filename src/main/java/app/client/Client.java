@@ -58,6 +58,7 @@ public class Client {
                 digRq.setDepth(digRq.getDepth() + 1);
 
                 if (response.statusCode() == Const.HTTP_OK) {
+                    Repository.rpsSuccess.incrementAndGet();
                     currentAmount.incrementAndGet();
                     Repository.incDigSuccess();
                     //logger.error("Dig success = " + fullDig + Repository.getActionsInfo());
@@ -101,6 +102,7 @@ public class Client {
         httpClient.sendAsync(httpRequest, HttpResponse.BodyHandlers.ofString())
                 .thenAcceptAsync(response -> {
                     if (response.statusCode() == Const.HTTP_OK) {
+                        Repository.rpsSuccess.incrementAndGet();
                         Repository.incMoneySuccess();
                         if (Repository.wallet.size() > 50_000) {
                             return;
@@ -168,6 +170,7 @@ public class Client {
                     if (response.statusCode() != Const.HTTP_OK) {
                         Repository.addMoney(cash);
                     } else {
+                        Repository.rpsSuccess.incrementAndGet();
                         var license = JsonIterator.deserialize(response.body(), License.class);
                         Repository.putLicenseNew(license);
                     }
@@ -182,10 +185,28 @@ public class Client {
         httpClient.sendAsync(createExploreRequest(area), HttpResponse.BodyHandlers.ofString())
                 .thenAcceptAsync(response -> {
                     if (response.statusCode() == Const.HTTP_OK) {
+                        Repository.rpsSuccess.incrementAndGet();
                         var explored = JsonIterator.deserialize(response.body(), Explored.class);
                         if (explored.getAmount() > 0) {
                             Repository.addExplored(explored);
                             Repository.incExplorerSuccess();
+                        }
+                    } else {
+                        Repository.incExplorerError();
+                    }
+                }, responseEx);
+    }
+
+    public void exploreAsync25(Area area) {
+        httpClient.sendAsync(createExploreRequest(area), HttpResponse.BodyHandlers.ofString())
+                .thenAcceptAsync(response -> {
+                    if (response.statusCode() == Const.HTTP_OK) {
+                        Repository.rpsSuccess.incrementAndGet();
+                        var explored = JsonIterator.deserialize(response.body(), Explored.class);
+                        if (explored.getAmount() > 1) {
+                            Repository.addExplored25(explored);
+                        } else {
+                            Repository.skipped25.incrementAndGet();
                         }
                     } else {
                         Repository.incExplorerError();

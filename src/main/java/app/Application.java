@@ -54,42 +54,18 @@ public class Application {
         runBackgroundLicenses();
         runBackgroundMoney();
         runDigger();
+        runBackgroundExplore25();
 
         try {
             //logger.error("Single = " + client.exploreBlocking(area).body());
             for (int x1 = 0; x1 < 3500; x1++) {
                 for (int y1 = 0; y1 < 3500; y1 = y1 + STEP1) {
-                    var explored = doExplore(new Area(x1, y1, 1, STEP1));
-
-                    if (explored.getAmount() > 1) {
-                        Explored maxAmount = doExplore(new Area(x1, y1, 1, STEP2));
-                        if (maxAmount.getAmount() == explored.getAmount()) {
-                            findTreasure5(maxAmount);
-                            Repository.skipped5.incrementAndGet();
-                            continue;
-                        }
-                        for (int i = 5; i < 25; i = i + STEP2) {
-                            var explored_5 = doExplore(new Area(x1, y1 + i, 1, STEP2));
-                            if (explored_5.getAmount() == explored.getAmount()) {
-                                maxAmount = explored_5;
-                                Repository.skipped5_1.incrementAndGet();
-                                break;
-                            } else if (explored_5.getAmount() > maxAmount.getAmount()) {
-                                maxAmount = explored_5;
-                            }
-                        }
-                        if (maxAmount.getAmount() == 0) {
-                            Repository.incTreasureNotFound();
-                            throw new RuntimeException("error find 5");
-                        } else {
-                            findTreasure5(maxAmount);
-                        }
-                    } else {
-                        Repository.skipped25.incrementAndGet();
-                    }
+                    Thread.sleep(8);
+                    client.exploreAsync25(new Area(x1, y1, 1, STEP1));
                 }
             }
         } catch (Exception e) {
+            Repository.explorerError.incrementAndGet();
             logger.error("Error", e);
         }
 
@@ -134,6 +110,7 @@ public class Application {
                 if (response.statusCode() != Const.HTTP_OK) {
                     Thread.sleep(10);
                 } else {
+                    Repository.rpsSuccess.incrementAndGet();
                     Repository.incExplorerSuccess();
                     return JsonIterator.deserialize(response.body(), Explored.class);
                 }
@@ -146,21 +123,52 @@ public class Application {
         }
     }
 
-    private void tryToGetMoney() {
-        var moneyRetry = Repository.pollMoneyRetry();
-        if (moneyRetry != null) {
-            client.getMyMoney(moneyRetry);
-            Repository.decrementMoneyError();
-        }
-    }
-
     private void runBackgroundMoney() {
         ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
         executorService.scheduleWithFixedDelay(() -> {
             Repository.schedulerAttemptMoney.incrementAndGet();
-            tryToGetMoney();
+            var moneyRetry = Repository.pollMoneyRetry();
+            if (moneyRetry != null) {
+                client.getMyMoney(moneyRetry);
+                Repository.decrementMoneyError();
+            }
             //logger.error("Background stat = " + Repository.getActionsInfo());
         }, 1, 100, TimeUnit.MILLISECONDS);
+        logger.error("License receiver has been started");
+    }
+
+    private void runBackgroundExplore25() {
+        ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+        executorService.scheduleWithFixedDelay(() -> {
+            try {
+                Explored explore25 = Repository.takeExplore25();
+                Explored maxAmount = doExplore(new Area(explore25.getArea().getPosX(), explore25.getArea().getPosY(), 1, STEP2));
+                if (maxAmount.getAmount() == explore25.getAmount()) {
+                    findTreasure5(maxAmount);
+                    Repository.skipped5.incrementAndGet();
+                    return;
+                }
+                for (int i = 5; i < 25; i = i + STEP2) {
+                    var explored_5 = doExplore(new Area(explore25.getArea().getPosX(), explore25.getArea().getPosY() + i, 1, STEP2));
+                    if (explored_5.getAmount() == explore25.getAmount()) {
+                        maxAmount = explored_5;
+                        Repository.skipped5_1.incrementAndGet();
+                        break;
+                    } else if (explored_5.getAmount() > maxAmount.getAmount()) {
+                        maxAmount = explored_5;
+                    }
+                }
+                if (maxAmount.getAmount() == 0) {
+                    Repository.incTreasureNotFound();
+                    throw new RuntimeException("error find 5");
+                } else {
+                    findTreasure5(maxAmount);
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            //logger.error("Background stat = " + Repository.getActionsInfo());
+        }, 1, 1, TimeUnit.MILLISECONDS);
         logger.error("License receiver has been started");
     }
 
@@ -188,6 +196,7 @@ public class Application {
             } else {
                 var response = client.getNewFreeLicense();
                 if (response.statusCode() == Const.HTTP_OK) {
+                    Repository.rpsSuccess.incrementAndGet();
                     var license = JsonIterator.deserialize(response.body(), License.class);
                     Repository.putLicenseNew(license);
                 }
@@ -227,6 +236,7 @@ public class Application {
                 Thread.sleep(10);
                 var response = client.getNewFreeLicense();
                 if (response.statusCode() == Const.HTTP_OK) {
+                    Repository.rpsSuccess.incrementAndGet();
                     var license = JsonIterator.deserialize(response.body(), License.class);
                     Repository.putLicenseNew(license);
                     logger.error("Server has been started");

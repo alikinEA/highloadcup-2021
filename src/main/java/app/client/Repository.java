@@ -3,9 +3,11 @@ package app.client;
 import app.client.models.*;
 
 import java.net.http.HttpRequest;
+import java.util.Comparator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Repository {
@@ -14,6 +16,7 @@ public class Repository {
     private static final BlockingQueue<HttpRequest> moneyRetry = new LinkedBlockingDeque<>();
     public static final BlockingQueue<Explored> exploredAreas1 = new LinkedBlockingQueue<>();
     private static final BlockingQueue<Explored> exploredAreas2 = new LinkedBlockingQueue<>();
+    public static  final PriorityBlockingQueue<Explored> exploredAreas25 = new PriorityBlockingQueue<>(30_000, Comparator.comparingInt(Explored::getAmount).reversed());
     private static final AtomicInteger digSuccess = new AtomicInteger(0);
     private static final AtomicInteger digMiss = new AtomicInteger(0);
     private static final AtomicInteger digError = new AtomicInteger(0);
@@ -40,6 +43,7 @@ public class Repository {
     public static final AtomicInteger schedulerAttemptMoney = new AtomicInteger(0);
 
     public static final AtomicInteger explorerError = new AtomicInteger(0);
+    public static final AtomicInteger rpsSuccess = new AtomicInteger(0);
 
 
     public static License takeLicense() {
@@ -129,7 +133,8 @@ public class Repository {
                 + " licenseFull " + licenseFull.get()
                 + " getLicenseAttempt " + licenseAttempt.get()
                 + " schedulerAttemptMoney " + schedulerAttemptMoney.get()
-                + " schedulerAttemptLicense " + schedulerAttemptLicense.get();
+                + " schedulerAttemptLicense " + schedulerAttemptLicense.get()
+                + " rpsSuccess " + rpsSuccess.get();
     }
 
     public static int incDigSuccess() {
@@ -186,5 +191,13 @@ public class Repository {
 
     public static void incExplorerError() {
         explorerError.incrementAndGet();
+    }
+
+    public static void addExplored25(Explored explored) {
+        exploredAreas25.add(explored);
+    }
+
+    public static Explored takeExplore25() throws InterruptedException {
+        return exploredAreas25.take();
     }
 }
