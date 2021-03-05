@@ -40,7 +40,7 @@ public class Repository {
 
     public static final AtomicInteger licenseAttempt = new AtomicInteger(0);
     public static final AtomicInteger schedulerAttemptLicense = new AtomicInteger(0);
-    public static final AtomicInteger schedulerAttemptMoney = new AtomicInteger(0);
+    public static final AtomicInteger schedulerMoneyRetry = new AtomicInteger(0);
 
     public static final AtomicInteger explorerError = new AtomicInteger(0);
     public static final AtomicInteger rpsSuccess = new AtomicInteger(0);
@@ -132,7 +132,7 @@ public class Repository {
                 + " skipped50 " + skipped50.get()
                 + " licenseFull " + licenseFull.get()
                 + " getLicenseAttempt " + licenseAttempt.get()
-                + " schedulerAttemptMoney " + schedulerAttemptMoney.get()
+                + " schedulerAttemptMoney " + schedulerMoneyRetry.get()
                 + " schedulerAttemptLicense " + schedulerAttemptLicense.get()
                 + " rpsSuccess " + rpsSuccess.get();
     }
@@ -177,8 +177,8 @@ public class Repository {
         moneyRetry.add(request);
     }
 
-    public static HttpRequest pollMoneyRetry() {
-        return moneyRetry.poll();
+    public static HttpRequest takeMoneyRetry() throws InterruptedException {
+        return moneyRetry.take();
     }
 
     public static int decrementMoneyError() {

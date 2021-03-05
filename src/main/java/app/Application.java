@@ -52,7 +52,7 @@ public class Application {
         logger.error("Client has been started");
         waitingForServer();
         runBackgroundLicenses();
-        runBackgroundMoney();
+        runBackgroundMoneyRetry();
         runDigger();
         runBackgroundExplore25();
 
@@ -123,17 +123,18 @@ public class Application {
         }
     }
 
-    private void runBackgroundMoney() {
+    private void runBackgroundMoneyRetry() {
         ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
         executorService.scheduleWithFixedDelay(() -> {
-            Repository.schedulerAttemptMoney.incrementAndGet();
-            var moneyRetry = Repository.pollMoneyRetry();
-            if (moneyRetry != null) {
-                client.getMyMoney(moneyRetry);
+            try {
+                client.getMyMoney(Repository.takeMoneyRetry());
+                Repository.schedulerMoneyRetry.incrementAndGet();
                 Repository.decrementMoneyError();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
             //logger.error("Background stat = " + Repository.getActionsInfo());
-        }, 1, 100, TimeUnit.MILLISECONDS);
+        }, 1, 1, TimeUnit.MILLISECONDS);
         logger.error("License receiver has been started");
     }
 
@@ -178,7 +179,7 @@ public class Application {
             Repository.schedulerAttemptLicense.incrementAndGet();
             tryToGetLicense();
             logger.error("Background stat = " + Repository.getActionsInfo());
-        }, 1, 30, TimeUnit.MILLISECONDS);
+        }, 1, 28, TimeUnit.MILLISECONDS);
         logger.error("License receiver has been started");
     }
 
@@ -211,14 +212,13 @@ public class Application {
         ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
         executorService.scheduleWithFixedDelay(() -> {
             var digFull = Repository.pollDugFull();
+            var license = Repository.takeLicense();
             if (digFull != null) {
-                var license = Repository.takeLicense();
                 digFull.getDigRq().setLicenseID(license.getId());
                 digFull.setLicense(license);
                 //logger.error("Dug one more time = " + digFull + Repository.getActionsInfo());
                 client.digBlocking(digFull);
             } else {
-                var license = Repository.takeLicense();
                 var explored = Repository.takeExplored();
                 var exploredArea = explored.getArea();
                 //logger.error("Take license = " + license);

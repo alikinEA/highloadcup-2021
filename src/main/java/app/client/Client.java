@@ -111,11 +111,9 @@ public class Client {
                         for (int i : cash) {
                             Repository.addMoney(i);
                         }
-                    } else if (response.statusCode() == Const.HTTP_SERVICE_UNAVAILABLE) {
+                    } else {
                         Repository.incMoneyError();
                         Repository.addMoneyRetry(response.request());
-                    } else {
-                        logger.error("Money error = " + response.body());
                     }
                 }, responseEx);
     }
