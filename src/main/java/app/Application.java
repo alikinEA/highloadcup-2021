@@ -96,9 +96,12 @@ public class Application {
 
     private void findThreasure2(Explored explored2) {
         var explored1_1 = doExplore(new Area(explored2.getArea().getPosX(), explored2.getArea().getPosY(), 1, 1));
-        if (explored1_1.getAmount() > 0) {
+        if (explored1_1.getAmount() == explored2.getAmount()) {
             Repository.addExplored(explored1_1);
         } else {
+            if (explored1_1.getAmount() > 0) {
+                Repository.addExplored(explored1_1);
+            }
             client.exploreAsync(new Area(explored2.getArea().getPosX(), explored2.getArea().getPosY() + 1, 1, 1));
         }
     }
