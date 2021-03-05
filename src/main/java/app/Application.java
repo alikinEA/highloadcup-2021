@@ -83,9 +83,10 @@ public class Application {
                 if (explored2_1.getAmount() == 0 && explored2_2.getAmount() == 0) {
                     client.exploreAsync(new Area(explored5.getArea().getPosX(), explored5.getArea().getPosY() + 4, 1, 1));
                 } else {
-                    if (explored2_1.getAmount() > explored2_2.getAmount()) {
-                        findThreasure2(explored2_1);//here all dig if needed
-                    } else {
+                    if (explored2_1.getAmount() > 0) {
+                        findThreasure2(explored2_1);
+                    }
+                    if (explored2_2.getAmount() > 0) {
                         findThreasure2(explored2_2);
                     }
                 }
