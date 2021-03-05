@@ -84,7 +84,7 @@ public class Application {
                     client.exploreAsync(new Area(explored5.getArea().getPosX(), explored5.getArea().getPosY() + 4, 1, 1));
                 } else {
                     if (explored2_1.getAmount() > explored2_2.getAmount()) {
-                        findThreasure2(explored2_1);
+                        findThreasure2(explored2_1);//here all dig if needed
                     } else {
                         findThreasure2(explored2_2);
                     }
@@ -217,7 +217,7 @@ public class Application {
                 digFull.getDigRq().setLicenseID(license.getId());
                 digFull.setLicense(license);
                 //logger.error("Dug one more time = " + digFull + Repository.getActionsInfo());
-                client.digBlocking(digFull);
+                client.digAsync(digFull);
             } else {
                 var explored = Repository.takeExplored();
                 var exploredArea = explored.getArea();

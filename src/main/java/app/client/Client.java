@@ -48,49 +48,53 @@ public class Client {
     public void digBlocking(DigFull fullDig) {
         try {
             var response = httpClient.send(createDigRequest(fullDig.getDigRq()), HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() == Const.HTTP_OK || response.statusCode() == Const.HTTP_NOT_FOUND) {
-                var license = fullDig.getLicense();
-                var digRq = fullDig.getDigRq();
-                var amount = fullDig.getAmount();
-                var currentAmount = fullDig.getCurrentAmount();
-
-                license.setDigAllowed(license.getDigAllowed() - 1);
-                digRq.setDepth(digRq.getDepth() + 1);
-
-                if (response.statusCode() == Const.HTTP_OK) {
-                    Repository.rpsSuccess.incrementAndGet();
-                    currentAmount.incrementAndGet();
-                    Repository.incDigSuccess();
-                    //logger.error("Dig success = " + fullDig + Repository.getActionsInfo());
-                    var treasures = JsonIterator.deserialize(response.body(), String[].class);
-                    for (int i = 0; i < treasures.length; i++) {
-                        getMyMoney(treasures[i]);
-                    }
-                } else {
-                    Repository.incDigMiss();
-                }
-                if (digRq.getDepth() == Application.GRABTIEFE && currentAmount.get() < amount) {
-                    Repository.incTreasureNotFound();
-                    //logger.error("Dug 10 time = " + fullDig + Repository.getActionsInfo());
-                }
-
-                if (digRq.getDepth() < Application.GRABTIEFE && currentAmount.get() < amount) {
-                    if (license.getDigAllowed() > 0) {
-                        digBlocking(fullDig);
-                    } else {
-                        Repository.addDugFull(fullDig);
-                    }
-                } else {
-                    if (license.getDigAllowed() > 0) {
-                        Repository.putLicense(license);
-                    }
-                }
-            } else {
-                Repository.incDigError();
-                logger.error("Dig error = " + response.body() + fullDig);
-            }
+            handleDigResponse(response, fullDig);
         } catch (Exception e) {
             Repository.incDigError();
+        }
+    }
+
+    private void handleDigResponse(HttpResponse<String> response, DigFull fullDig) {
+        if (response.statusCode() == Const.HTTP_OK || response.statusCode() == Const.HTTP_NOT_FOUND) {
+            var license = fullDig.getLicense();
+            var digRq = fullDig.getDigRq();
+            var amount = fullDig.getAmount();
+            var currentAmount = fullDig.getCurrentAmount();
+
+            license.setDigAllowed(license.getDigAllowed() - 1);
+            digRq.setDepth(digRq.getDepth() + 1);
+
+            if (response.statusCode() == Const.HTTP_OK) {
+                Repository.rpsSuccess.incrementAndGet();
+                currentAmount.incrementAndGet();
+                Repository.incDigSuccess();
+                //logger.error("Dig success = " + fullDig + Repository.getActionsInfo());
+                var treasures = JsonIterator.deserialize(response.body(), String[].class);
+                for (int i = 0; i < treasures.length; i++) {
+                    getMyMoney(treasures[i]);
+                }
+            } else {
+                Repository.incDigMiss();
+            }
+            if (digRq.getDepth() == Application.GRABTIEFE && currentAmount.get() < amount) {
+                Repository.incTreasureNotFound();
+                //logger.error("Dug 10 time = " + fullDig + Repository.getActionsInfo());
+            }
+
+            if (digRq.getDepth() < Application.GRABTIEFE && currentAmount.get() < amount) {
+                if (license.getDigAllowed() > 0) {
+                    digBlocking(fullDig);
+                } else {
+                    Repository.addDugFull(fullDig);
+                }
+            } else {
+                if (license.getDigAllowed() > 0) {
+                    Repository.putLicense(license);
+                }
+            }
+        } else {
+            Repository.incDigError();
+            logger.error("Dig error = " + response.body() + fullDig);
         }
     }
 
@@ -166,6 +170,7 @@ public class Client {
                 .thenAcceptAsync(response -> {
                     Repository.licenseAttempt.incrementAndGet();
                     if (response.statusCode() != Const.HTTP_OK) {
+                        Repository.incLicenseErrors();
                         Repository.addMoney(cash);
                     } else {
                         Repository.rpsSuccess.incrementAndGet();
@@ -210,5 +215,10 @@ public class Client {
                         Repository.incExplorerError();
                     }
                 }, responseEx);
+    }
+
+    public void digAsync(DigFull digFull) {
+        httpClient.sendAsync(createDigRequest(digFull.getDigRq()), HttpResponse.BodyHandlers.ofString())
+                .thenAcceptAsync(response -> handleDigResponse(response, digFull));
     }
 }

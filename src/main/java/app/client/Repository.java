@@ -132,7 +132,7 @@ public class Repository {
                 + " skipped50 " + skipped50.get()
                 + " licenseFull " + licenseFull.get()
                 + " getLicenseAttempt " + licenseAttempt.get()
-                + " schedulerAttemptMoney " + schedulerMoneyRetry.get()
+                + " schedulerMoneyRetry " + schedulerMoneyRetry.get()
                 + " schedulerAttemptLicense " + schedulerAttemptLicense.get()
                 + " rpsSuccess " + rpsSuccess.get();
     }
