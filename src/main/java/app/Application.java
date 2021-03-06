@@ -57,7 +57,7 @@ public class Application {
             for (int x1 = 0; x1 < 3500; x1++) {
                 for (int y1 = 0; y1 < 3500; y1 = y1 + STEP0) {
                     client.exploreAsync50(new Area(x1, y1, 1, STEP0));
-                    Thread.sleep(26);
+                    Thread.sleep(29);
                 }
             }
         } catch (Exception e) {
