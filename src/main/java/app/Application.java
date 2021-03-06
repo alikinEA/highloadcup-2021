@@ -147,30 +147,22 @@ public class Application {
         executorService.scheduleWithFixedDelay(() -> {
             try {
                 Explored explore25 = Repository.takeExplore25();
-                Explored maxAmount = doExplore(new Area(explore25.getArea().getPosX(), explore25.getArea().getPosY(), 1, STEP2));
-                if (maxAmount.getAmount() == explore25.getAmount()) {
-                    findTreasure5(maxAmount);
-                    Repository.skipped5.incrementAndGet();
-                    return;
-                }
-                for (int i = 5; i < 25; i = i + STEP2) {
+                int summ = 0;
+                for (int i = 0; i < 25; i = i + STEP2) {
                     var explored_5 = doExplore(new Area(explore25.getArea().getPosX(), explore25.getArea().getPosY() + i, 1, STEP2));
-                    if (explored_5.getAmount() == explore25.getAmount()) {
-                        maxAmount = explored_5;
-                        Repository.skipped5_1.incrementAndGet();
+                    summ = summ + explored_5.getAmount();
+                    if (explored_5.getAmount() > 0) {
+                        findTreasure5(explored_5);
+                    }
+                    if (summ == explore25.getAmount()) {
                         break;
-                    } else if (explored_5.getAmount() > maxAmount.getAmount()) {
-                        maxAmount = explored_5;
                     }
                 }
-                if (maxAmount.getAmount() == 0) {
+                if (summ != explore25.getAmount()) {
                     Repository.incTreasureNotFound();
-                    throw new RuntimeException("error find 5");
-                } else {
-                    findTreasure5(maxAmount);
                 }
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                Repository.incTreasureNotFound();
             }
             //logger.error("Background stat = " + Repository.getActionsInfo());
         }, 1, 1, TimeUnit.MILLISECONDS);
@@ -227,7 +219,7 @@ public class Application {
                 var exploredArea = explored.getArea();
                 //logger.error("Take license = " + license);
                 var digRq = new DigRq(license.getId(), exploredArea.getPosX(), exploredArea.getPosY(), 1);
-                client.digBlocking(new DigFull(digRq, explored.getAmount(), 0, license));
+                client.digAsync(new DigFull(digRq, explored.getAmount(), 0, license));
             }
 
         }, 1, 1, TimeUnit.MILLISECONDS);
