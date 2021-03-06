@@ -173,7 +173,7 @@ public class Application {
             Repository.schedulerAttemptLicense.incrementAndGet();
             tryToGetLicense();
             logger.error("Background stat = " + Repository.getActionsInfo());
-        }, 1, 24, TimeUnit.MILLISECONDS);
+        }, 1, 23, TimeUnit.MILLISECONDS);
         logger.error("License receiver has been started");
     }
 
