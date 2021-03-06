@@ -56,6 +56,7 @@ public class Client {
 
     private void handleDigResponse(HttpResponse<String> response, DigFull fullDig) {
         if (response.statusCode() == Const.HTTP_OK || response.statusCode() == Const.HTTP_NOT_FOUND) {
+            Repository.rpsSuccess.incrementAndGet();
             var license = fullDig.getLicense();
             var digRq = fullDig.getDigRq();
             var amount = fullDig.getAmount();
@@ -65,7 +66,6 @@ public class Client {
             digRq.setDepth(digRq.getDepth() + 1);
 
             if (response.statusCode() == Const.HTTP_OK) {
-                Repository.rpsSuccess.incrementAndGet();
                 currentAmount.incrementAndGet();
                 Repository.incDigSuccess();
                 //logger.error("Dig success = " + fullDig + Repository.getActionsInfo());
@@ -220,5 +220,44 @@ public class Client {
     public void digAsync(DigFull digFull) {
         httpClient.sendAsync(createDigRequest(digFull.getDigRq()), HttpResponse.BodyHandlers.ofString())
                 .thenAcceptAsync(response -> handleDigResponse(response, digFull));
+    }
+
+    public Explored doExplore(Area area) {
+        while (true) {
+            try {
+                var responseF = exploreBlocking(area);
+                var response = responseF.get();
+                if (response.statusCode() != Const.HTTP_OK) {
+                    Thread.sleep(10);
+                } else {
+                    Repository.rpsSuccess.incrementAndGet();
+                    Repository.incExplorerSuccess();
+                    return JsonIterator.deserialize(response.body(), Explored.class);
+                }
+            } catch (Exception e) {
+                try {
+                    Thread.sleep(10);
+                } catch (Exception e1) {
+                }
+            }
+        }
+    }
+
+
+    public void exploreAsync50(Area area) {
+        httpClient.sendAsync(createExploreRequest(area), HttpResponse.BodyHandlers.ofString())
+                .thenAcceptAsync(response -> {
+                    if (response.statusCode() == Const.HTTP_OK) {
+                        Repository.rpsSuccess.incrementAndGet();
+                        var explored = JsonIterator.deserialize(response.body(), Explored.class);
+                        if (explored.getAmount() > 1) {
+                            Repository.exploredAreas50.add(explored);
+                        } else {
+                            Repository.skipped50.incrementAndGet();
+                        }
+                    } else {
+                        Repository.incExplorerError();
+                    }
+                }, responseEx);
     }
 }

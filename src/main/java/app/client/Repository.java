@@ -17,6 +17,7 @@ public class Repository {
     public static final BlockingQueue<Explored> exploredAreas1 = new LinkedBlockingQueue<>();
     private static final BlockingQueue<Explored> exploredAreas2 = new LinkedBlockingQueue<>();
     public static  final PriorityBlockingQueue<Explored> exploredAreas25 = new PriorityBlockingQueue<>(30_000, Comparator.comparingInt(Explored::getAmount).reversed());
+    public static  final PriorityBlockingQueue<Explored> exploredAreas50 = new PriorityBlockingQueue<>(30_000, Comparator.comparingInt(Explored::getAmount).reversed());
     private static final AtomicInteger digSuccess = new AtomicInteger(0);
     private static final AtomicInteger digMiss = new AtomicInteger(0);
     private static final AtomicInteger digError = new AtomicInteger(0);
@@ -134,7 +135,9 @@ public class Repository {
                 + " getLicenseAttempt " + licenseAttempt.get()
                 + " schedulerMoneyRetry " + schedulerMoneyRetry.get()
                 + " schedulerAttemptLicense " + schedulerAttemptLicense.get()
-                + " rpsSuccess " + rpsSuccess.get();
+                + " rpsSuccess " + rpsSuccess.get()
+                + " exploredAreas25 = " + exploredAreas25.size()
+                + " exploredAreas50 = " + exploredAreas50.size();
     }
 
     public static int incDigSuccess() {

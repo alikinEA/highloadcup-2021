@@ -8,20 +8,15 @@ import com.jsoniter.JsonIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.http.HttpResponse;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 public class Application {
-    private static final int STEP1 = 25;
+    private static final int STEP0 = 50;
+    public static final int STEP1 = 25;
     private static final int STEP2 = 5;
     private static final int STEP3 = 2;
     private static final int STEP4 = 3;
@@ -53,15 +48,16 @@ public class Application {
         waitingForServer();
         runBackgroundLicenses();
         runBackgroundMoneyRetry();
+        runBackgroundExplore50();
         runDigger();
         runBackgroundExplore25();
 
         try {
             //logger.error("Single = " + client.exploreBlocking(area).body());
             for (int x1 = 0; x1 < 3500; x1++) {
-                for (int y1 = 0; y1 < 3500; y1 = y1 + STEP1) {
-                    Thread.sleep(8);
-                    client.exploreAsync25(new Area(x1, y1, 1, STEP1));
+                for (int y1 = 0; y1 < 3500; y1 = y1 + STEP0) {
+                    client.exploreAsync50(new Area(x1, y1, 1, STEP0));
+                    Thread.sleep(25);
                 }
             }
         } catch (Exception e) {
@@ -72,11 +68,11 @@ public class Application {
     }
 
     private void findTreasure5(Explored explored5) {
-        var explored2_1 = doExplore(new Area(explored5.getArea().getPosX(), explored5.getArea().getPosY(), 1, 2));
+        var explored2_1 = client.doExplore(new Area(explored5.getArea().getPosX(), explored5.getArea().getPosY(), 1, 2));
         if (explored2_1.getAmount() == explored5.getAmount()) {
             findThreasure2(explored2_1);
         } else {
-            var explored2_2 = doExplore(new Area(explored5.getArea().getPosX(), explored5.getArea().getPosY() + 2, 1, 2));
+            var explored2_2 = client.doExplore(new Area(explored5.getArea().getPosX(), explored5.getArea().getPosY() + 2, 1, 2));
             if (explored2_1.getAmount() == explored5.getAmount()) {
                 findThreasure2(explored2_1);
             } else {
@@ -95,7 +91,7 @@ public class Application {
     }
 
     private void findThreasure2(Explored explored2) {
-        var explored1_1 = doExplore(new Area(explored2.getArea().getPosX(), explored2.getArea().getPosY(), 1, 1));
+        var explored1_1 = client.doExplore(new Area(explored2.getArea().getPosX(), explored2.getArea().getPosY(), 1, 1));
         if (explored1_1.getAmount() == explored2.getAmount()) {
             Repository.addExplored(explored1_1);
         } else {
@@ -103,27 +99,6 @@ public class Application {
                 Repository.addExplored(explored1_1);
             }
             client.exploreAsync(new Area(explored2.getArea().getPosX(), explored2.getArea().getPosY() + 1, 1, 1));
-        }
-    }
-
-    private Explored doExplore(Area area) {
-        while (true) {
-            try {
-                var responseF = client.exploreBlocking(area);
-                var response = responseF.get();
-                if (response.statusCode() != Const.HTTP_OK) {
-                    Thread.sleep(10);
-                } else {
-                    Repository.rpsSuccess.incrementAndGet();
-                    Repository.incExplorerSuccess();
-                    return JsonIterator.deserialize(response.body(), Explored.class);
-                }
-            } catch (Exception e) {
-                try {
-                    Thread.sleep(10);
-                } catch (Exception e1) {
-                }
-            }
         }
     }
 
@@ -149,7 +124,7 @@ public class Application {
                 Explored explore25 = Repository.takeExplore25();
                 int summ = 0;
                 for (int i = 0; i < 25; i = i + STEP2) {
-                    var explored_5 = doExplore(new Area(explore25.getArea().getPosX(), explore25.getArea().getPosY() + i, 1, STEP2));
+                    var explored_5 = client.doExplore(new Area(explore25.getArea().getPosX(), explore25.getArea().getPosY() + i, 1, STEP2));
                     summ = summ + explored_5.getAmount();
                     if (explored_5.getAmount() > 0) {
                         findTreasure5(explored_5);
@@ -160,6 +135,29 @@ public class Application {
                 }
                 if (summ != explore25.getAmount()) {
                     Repository.incTreasureNotFound();
+                }
+            } catch (InterruptedException e) {
+                Repository.incTreasureNotFound();
+            }
+            //logger.error("Background stat = " + Repository.getActionsInfo());
+        }, 1, 1, TimeUnit.MILLISECONDS);
+        logger.error("License receiver has been started");
+    }
+
+    private void runBackgroundExplore50() {
+        ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+        executorService.scheduleWithFixedDelay(() -> {
+            try {
+                Explored explore50 = Repository.exploredAreas50.take();
+                var explored25_1 = client.doExplore(new Area(explore50.getArea().getPosX(), explore50.getArea().getPosY(), 1, STEP1));
+                if (explored25_1.getAmount() == explore50.getAmount()) {
+                    Repository.addExplored25(explored25_1);
+                    Repository.skipped25.incrementAndGet();
+                } else {
+                    if (explored25_1.getAmount() > 0) {
+                        Repository.addExplored25(explored25_1);
+                    }
+                    client.exploreAsync25(new Area(explore50.getArea().getPosX(), explore50.getArea().getPosY() + STEP1, 1, STEP1));
                 }
             } catch (InterruptedException e) {
                 Repository.incTreasureNotFound();
