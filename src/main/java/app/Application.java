@@ -57,7 +57,7 @@ public class Application {
             for (int x1 = 0; x1 < 3500; x1++) {
                 for (int y1 = 0; y1 < 3500; y1 = y1 + STEP0) {
                     client.exploreAsync50(new Area(x1, y1, 1, STEP0));
-                    Thread.sleep(25);
+                    Thread.sleep(26);
                 }
             }
         } catch (Exception e) {
@@ -173,7 +173,7 @@ public class Application {
             Repository.schedulerAttemptLicense.incrementAndGet();
             tryToGetLicense();
             logger.error("Background stat = " + Repository.getActionsInfo());
-        }, 1, 23, TimeUnit.MILLISECONDS);
+        }, 1, 22, TimeUnit.MILLISECONDS);
         logger.error("License receiver has been started");
     }
 
