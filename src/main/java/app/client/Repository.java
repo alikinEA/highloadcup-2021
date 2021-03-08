@@ -36,7 +36,6 @@ public class Repository {
     public static final AtomicInteger skipped25 = new AtomicInteger(0);
     public static final AtomicInteger skipped5 = new AtomicInteger(0);
     public static final AtomicInteger skipped50 = new AtomicInteger(0);
-    public static final AtomicInteger skipped5_1 = new AtomicInteger(0);
     public static final AtomicInteger licenseFull = new AtomicInteger(0);
 
     public static final AtomicInteger licenseAttempt = new AtomicInteger(0);
@@ -45,6 +44,7 @@ public class Repository {
 
     public static final AtomicInteger explorerError = new AtomicInteger(0);
     public static final AtomicInteger rpsSuccess = new AtomicInteger(0);
+    public static final AtomicInteger explored50Done = new AtomicInteger(0);
 
 
     public static License takeLicense() {
@@ -129,7 +129,6 @@ public class Repository {
                 + " FreeLicenses = " + freeLicenses.get()
                 + " Skipped25 " + skipped25.get()
                 + " Skipped5 " + skipped5.get()
-                + " Skipped5_1 " + skipped5_1.get()
                 + " skipped50 " + skipped50.get()
                 + " licenseFull " + licenseFull.get()
                 + " getLicenseAttempt " + licenseAttempt.get()
@@ -137,7 +136,8 @@ public class Repository {
                 + " schedulerAttemptLicense " + schedulerAttemptLicense.get()
                 + " rpsSuccess " + rpsSuccess.get()
                 + " exploredAreas25 = " + exploredAreas25.size()
-                + " exploredAreas50 = " + exploredAreas50.size();
+                + " exploredAreas50 = " + exploredAreas50.size()
+                + " explored50Done = " + explored50Done.get();
     }
 
     public static int incDigSuccess() {

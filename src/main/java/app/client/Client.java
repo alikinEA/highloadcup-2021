@@ -45,15 +45,6 @@ public class Client {
                 .build();
     }
 
-    public void digBlocking(DigFull fullDig) {
-        try {
-            var response = httpClient.send(createDigRequest(fullDig.getDigRq()), HttpResponse.BodyHandlers.ofString());
-            handleDigResponse(response, fullDig);
-        } catch (Exception e) {
-            Repository.incDigError();
-        }
-    }
-
     private void handleDigResponse(HttpResponse<String> response, DigFull fullDig) {
         if (response.statusCode() == Const.HTTP_OK || response.statusCode() == Const.HTTP_NOT_FOUND) {
             Repository.rpsSuccess.incrementAndGet();
@@ -83,7 +74,7 @@ public class Client {
 
             if (digRq.getDepth() < Application.GRABTIEFE && currentAmount.get() < amount) {
                 if (license.getDigAllowed() > 0) {
-                    digBlocking(fullDig);
+                    digAsync(fullDig);
                 } else {
                     Repository.addDugFull(fullDig);
                 }
@@ -251,6 +242,7 @@ public class Client {
                         Repository.rpsSuccess.incrementAndGet();
                         var explored = JsonIterator.deserialize(response.body(), Explored.class);
                         if (explored.getAmount() > 1) {
+                            Repository.explored50Done.incrementAndGet();
                             Repository.exploredAreas50.add(explored);
                         } else {
                             Repository.skipped50.incrementAndGet();
