@@ -128,8 +128,8 @@ public class Repository {
                 + " schedulerMoneyRetry " + schedulerMoneyRetry.get()
                 + " schedulerAttemptLicense " + schedulerAttemptLicense.get()
                 + " rpsSuccess " + rpsSuccess.get()
-                + " exploredAreas50 = " + exploredAreas63.size()
-                + " explored50Done = " + explored63Done.get()
+                + " exploredAreas63 = " + exploredAreas63.size()
+                + " explored63Done = " + explored63Done.get()
                 + " skipped63 = " + skipped63.get();
     }
 

@@ -53,10 +53,7 @@ public class Application {
             for (int x1 = 0; x1 < 3100; x1++) {
                 for (int y1 = 0; y1 < 3100; y1 = y1 + STEP63) {
                     client.exploreAsync63(new Area(x1, y1, 1, STEP63));
-                    Thread.sleep(35);
-                    if (Repository.explored63Done.get() > 9_900) {
-                        Thread.sleep(100000000);
-                    }
+                    Thread.sleep(36);
                 }
             }
         } catch (Exception e) {
