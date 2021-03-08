@@ -15,11 +15,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class Application {
-    private static final int STEP0 = 50;
-    public static final int STEP1 = 25;
-    private static final int STEP2 = 5;
-    private static final int STEP3 = 2;
-    private static final int STEP4 = 3;
+    private static final int STEP63 = 63;
+    private static final int STEP3 = 3;
     public static final int GRABTIEFE = 11;
 
     private static Logger logger = LoggerFactory.getLogger(Client.class);
@@ -31,7 +28,7 @@ public class Application {
     }
 
     public static void main(String[] args) throws URISyntaxException {
-        logger.error("Step = " + STEP1 + " GRABTIEFE = " + GRABTIEFE);
+        logger.error("Step = " + STEP63 + " GRABTIEFE = " + GRABTIEFE);
         var address = System.getenv("ADDRESS");
 
         logger.error("ADDRESS = " + address);
@@ -48,17 +45,16 @@ public class Application {
         waitingForServer();
         runBackgroundLicenses();
         runBackgroundMoneyRetry();
-        runBackgroundExplore50();
+        runBackgroundExplore63();
         runDigger();
-        runBackgroundExplore25();
 
         try {
             //logger.error("Single = " + client.exploreBlocking(area).body());
-            for (int x1 = 0; x1 < 3500; x1++) {
-                for (int y1 = 0; y1 < 3500; y1 = y1 + STEP0) {
-                    client.exploreAsync50(new Area(x1, y1, 1, STEP0));
+            for (int x1 = 0; x1 < 3100; x1++) {
+                for (int y1 = 0; y1 < 3100; y1 = y1 + STEP63) {
+                    client.exploreAsync63(new Area(x1, y1, 1, STEP63));
                     Thread.sleep(35);
-                    if (Repository.explored50Done.get() > 9_900) {
+                    if (Repository.explored63Done.get() > 9_900) {
                         Thread.sleep(100000000);
                     }
                 }
@@ -68,23 +64,6 @@ public class Application {
             logger.error("Error", e);
         }
 
-    }
-
-    private void findTreasure5(Explored explored5) {
-        int summ = 0;
-        for (int i = 0; i < 5; i++) {
-            var explored = client.doExplore(new Area(explored5.getArea().getPosX(), explored5.getArea().getPosY() + i, 1, 1));
-            summ = summ + explored.getAmount();
-            if (explored.getAmount() > 0) {
-                Repository.addExplored(explored);
-            }
-            if (summ == explored5.getAmount()) {
-                return;
-            }
-        }
-        if (summ != explored5.getAmount()) {
-            Repository.incTreasureNotFound();
-        }
     }
 
     private void runBackgroundMoneyRetry() {
@@ -102,23 +81,25 @@ public class Application {
         logger.error("License receiver has been started");
     }
 
-    private void runBackgroundExplore25() {
+    private void runBackgroundExplore63() {
         ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
         executorService.scheduleWithFixedDelay(() -> {
             try {
-                Explored explore25 = Repository.takeExplore25();
+                Explored explore63 = Repository.exploredAreas63.take();
                 int summ = 0;
-                for (int i = 0; i < 25; i = i + STEP2) {
-                    var explored_5 = client.doExplore(new Area(explore25.getArea().getPosX(), explore25.getArea().getPosY() + i, 1, STEP2));
-                    summ = summ + explored_5.getAmount();
-                    if (explored_5.getAmount() > 0) {
-                        findTreasure5(explored_5);
+                for (int i = 0; i < 63; i = i + STEP3) {
+                    var explored3 = client.doExplore(new Area(explore63.getArea().getPosX(), explore63.getArea().getPosY() + i, 1, STEP3));
+                    summ = summ + explored3.getAmount();
+                    if (explored3.getAmount() > 0) {
+                        findTh3(explored3);
                     }
-                    if (summ == explore25.getAmount()) {
+
+                    if (summ == explore63.getAmount()) {
                         break;
                     }
                 }
-                if (summ != explore25.getAmount()) {
+
+                if (summ != explore63.getAmount()) {
                     Repository.incTreasureNotFound();
                 }
             } catch (InterruptedException e) {
@@ -129,27 +110,22 @@ public class Application {
         logger.error("License receiver has been started");
     }
 
-    private void runBackgroundExplore50() {
-        ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
-        executorService.scheduleWithFixedDelay(() -> {
-            try {
-                Explored explore50 = Repository.exploredAreas50.take();
-                var explored25_1 = client.doExplore(new Area(explore50.getArea().getPosX(), explore50.getArea().getPosY(), 1, STEP1));
-                if (explored25_1.getAmount() == explore50.getAmount()) {
-                    Repository.addExplored25(explored25_1);
-                    Repository.skipped25.incrementAndGet();
-                } else {
-                    if (explored25_1.getAmount() > 0) {
-                        Repository.addExplored25(explored25_1);
-                    }
-                    client.exploreAsync25(new Area(explore50.getArea().getPosX(), explore50.getArea().getPosY() + STEP1, 1, STEP1));
-                }
-            } catch (InterruptedException e) {
-                Repository.incTreasureNotFound();
+    private void findTh3(Explored explored3) {
+        int summ = 0;
+        for (int i = 0; i < 3; i++) {
+            var explored1 = client.doExplore(new Area(explored3.getArea().getPosX(), explored3.getArea().getPosY() + i, 1, 1));
+            summ = summ + explored1.getAmount();
+            if (explored1.getAmount() > 0) {
+                Repository.addExplored(explored1);
             }
-            //logger.error("Background stat = " + Repository.getActionsInfo());
-        }, 1, 1, TimeUnit.MILLISECONDS);
-        logger.error("License receiver has been started");
+
+            if (summ == explored3.getAmount()) {
+                break;
+            }
+        }
+        if (summ != explored3.getAmount()) {
+            Repository.incTreasureNotFound();
+        }
     }
 
     private void runBackgroundLicenses() {

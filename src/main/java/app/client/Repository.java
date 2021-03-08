@@ -16,8 +16,7 @@ public class Repository {
     private static final BlockingQueue<HttpRequest> moneyRetry = new LinkedBlockingDeque<>();
     public static final BlockingQueue<Explored> exploredAreas1 = new LinkedBlockingQueue<>();
     private static final BlockingQueue<Explored> exploredAreas2 = new LinkedBlockingQueue<>();
-    public static  final PriorityBlockingQueue<Explored> exploredAreas25 = new PriorityBlockingQueue<>(30_000, Comparator.comparingInt(Explored::getAmount).reversed());
-    public static  final PriorityBlockingQueue<Explored> exploredAreas50 = new PriorityBlockingQueue<>(30_000, Comparator.comparingInt(Explored::getAmount).reversed());
+    public static  final PriorityBlockingQueue<Explored> exploredAreas63 = new PriorityBlockingQueue<>(30_000, Comparator.comparingInt(Explored::getAmount).reversed());
     private static final AtomicInteger digSuccess = new AtomicInteger(0);
     private static final AtomicInteger digMiss = new AtomicInteger(0);
     private static final AtomicInteger digError = new AtomicInteger(0);
@@ -32,10 +31,6 @@ public class Repository {
     public static final BlockingQueue<Integer> wallet = new LinkedBlockingDeque<>(1_000_000);
     private static final AtomicInteger paidLicenses = new AtomicInteger(0);
     private static final AtomicInteger freeLicenses = new AtomicInteger(0);
-
-    public static final AtomicInteger skipped25 = new AtomicInteger(0);
-    public static final AtomicInteger skipped5 = new AtomicInteger(0);
-    public static final AtomicInteger skipped50 = new AtomicInteger(0);
     public static final AtomicInteger licenseFull = new AtomicInteger(0);
 
     public static final AtomicInteger licenseAttempt = new AtomicInteger(0);
@@ -44,7 +39,8 @@ public class Repository {
 
     public static final AtomicInteger explorerError = new AtomicInteger(0);
     public static final AtomicInteger rpsSuccess = new AtomicInteger(0);
-    public static final AtomicInteger explored50Done = new AtomicInteger(0);
+    public static final AtomicInteger explored63Done = new AtomicInteger(0);
+    public static final AtomicInteger skipped63 = new AtomicInteger(0);
 
 
     public static License takeLicense() {
@@ -127,17 +123,14 @@ public class Repository {
                 + " LicensesStore = " + licensesStore.size()
                 + " PaidLicenses = " + paidLicenses.get()
                 + " FreeLicenses = " + freeLicenses.get()
-                + " Skipped25 " + skipped25.get()
-                + " Skipped5 " + skipped5.get()
-                + " skipped50 " + skipped50.get()
                 + " licenseFull " + licenseFull.get()
                 + " getLicenseAttempt " + licenseAttempt.get()
                 + " schedulerMoneyRetry " + schedulerMoneyRetry.get()
                 + " schedulerAttemptLicense " + schedulerAttemptLicense.get()
                 + " rpsSuccess " + rpsSuccess.get()
-                + " exploredAreas25 = " + exploredAreas25.size()
-                + " exploredAreas50 = " + exploredAreas50.size()
-                + " explored50Done = " + explored50Done.get();
+                + " exploredAreas50 = " + exploredAreas63.size()
+                + " explored50Done = " + explored63Done.get()
+                + " skipped63 = " + skipped63.get();
     }
 
     public static int incDigSuccess() {
@@ -194,13 +187,5 @@ public class Repository {
 
     public static void incExplorerError() {
         explorerError.incrementAndGet();
-    }
-
-    public static void addExplored25(Explored explored) {
-        exploredAreas25.add(explored);
-    }
-
-    public static Explored takeExplore25() throws InterruptedException {
-        return exploredAreas25.take();
     }
 }

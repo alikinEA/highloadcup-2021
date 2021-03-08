@@ -175,39 +175,6 @@ public class Client {
         return httpClient.send(newLicenseR, HttpResponse.BodyHandlers.ofString());
     }
 
-    public void exploreAsync(Area area) {
-        httpClient.sendAsync(createExploreRequest(area), HttpResponse.BodyHandlers.ofString())
-                .thenAcceptAsync(response -> {
-                    if (response.statusCode() == Const.HTTP_OK) {
-                        Repository.rpsSuccess.incrementAndGet();
-                        var explored = JsonIterator.deserialize(response.body(), Explored.class);
-                        if (explored.getAmount() > 0) {
-                            Repository.addExplored(explored);
-                            Repository.incExplorerSuccess();
-                        }
-                    } else {
-                        Repository.incExplorerError();
-                    }
-                }, responseEx);
-    }
-
-    public void exploreAsync25(Area area) {
-        httpClient.sendAsync(createExploreRequest(area), HttpResponse.BodyHandlers.ofString())
-                .thenAcceptAsync(response -> {
-                    if (response.statusCode() == Const.HTTP_OK) {
-                        Repository.rpsSuccess.incrementAndGet();
-                        var explored = JsonIterator.deserialize(response.body(), Explored.class);
-                        if (explored.getAmount() > 1) {
-                            Repository.addExplored25(explored);
-                        } else {
-                            Repository.skipped25.incrementAndGet();
-                        }
-                    } else {
-                        Repository.incExplorerError();
-                    }
-                }, responseEx);
-    }
-
     public void digAsync(DigFull digFull) {
         httpClient.sendAsync(createDigRequest(digFull.getDigRq()), HttpResponse.BodyHandlers.ofString())
                 .thenAcceptAsync(response -> handleDigResponse(response, digFull));
@@ -235,17 +202,17 @@ public class Client {
     }
 
 
-    public void exploreAsync50(Area area) {
+    public void exploreAsync63(Area area) {
         httpClient.sendAsync(createExploreRequest(area), HttpResponse.BodyHandlers.ofString())
                 .thenAcceptAsync(response -> {
                     if (response.statusCode() == Const.HTTP_OK) {
                         Repository.rpsSuccess.incrementAndGet();
                         var explored = JsonIterator.deserialize(response.body(), Explored.class);
-                        if (explored.getAmount() > 1) {
-                            Repository.explored50Done.incrementAndGet();
-                            Repository.exploredAreas50.add(explored);
+                        if (explored.getAmount() > 0) {
+                            Repository.explored63Done.incrementAndGet();
+                            Repository.exploredAreas63.add(explored);
                         } else {
-                            Repository.skipped50.incrementAndGet();
+                            Repository.skipped63.incrementAndGet();
                         }
                     } else {
                         Repository.incExplorerError();
