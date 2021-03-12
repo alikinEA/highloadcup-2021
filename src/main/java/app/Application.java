@@ -46,6 +46,7 @@ public class Application {
         runBackgroundLicenses();
         runBackgroundMoneyRetry();
         runBackgroundExplore63();
+        runBackgroundExplore63_2();
         runDigger();
 
         try {
@@ -53,7 +54,6 @@ public class Application {
             for (int x1 = 0; x1 < 3100; x1++) {
                 for (int y1 = 0; y1 < 3100; y1 = y1 + STEP63) {
                     client.exploreAsync63(new Area(x1, y1, 1, STEP63));
-                    Thread.sleep(41);
                 }
             }
         } catch (Exception e) {
@@ -107,6 +107,35 @@ public class Application {
         logger.error("License receiver has been started");
     }
 
+    private void runBackgroundExplore63_2() {
+        ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+        executorService.scheduleWithFixedDelay(() -> {
+            try {
+                Explored explore63 = Repository.exploredAreas63.take();
+                int summ = 0;
+                for (int i = 0; i < 63; i = i + STEP3) {
+                    var explored3 = client.doExplore(new Area(explore63.getArea().getPosX(), explore63.getArea().getPosY() + i, 1, STEP3));
+                    summ = summ + explored3.getAmount();
+                    if (explored3.getAmount() > 0) {
+                        findTh3(explored3);
+                    }
+
+                    if (summ == explore63.getAmount()) {
+                        break;
+                    }
+                }
+
+                if (summ != explore63.getAmount()) {
+                    Repository.incTreasureNotFound();
+                }
+            } catch (InterruptedException e) {
+                Repository.incTreasureNotFound();
+            }
+            //logger.error("Background stat = " + Repository.getActionsInfo());
+        }, 1, 1, TimeUnit.MILLISECONDS);
+        logger.error("License receiver has been started");
+    }
+
     private void findTh3(Explored explored3) {
         int summ = 0;
         for (int i = 0; i < 3; i++) {
@@ -128,12 +157,12 @@ public class Application {
     private void runBackgroundLicenses() {
         ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
         executorService.scheduleWithFixedDelay(() -> {
-            if (Repository.licensesStore.size() < 5) {
+            if (Repository.licensesStore.size() < 4) {
                 Repository.schedulerAttemptLicense.incrementAndGet();
                 tryToGetLicense();
             }
             logger.error("Background stat = " + Repository.getActionsInfo());
-        }, 1, 19, TimeUnit.MILLISECONDS);
+        }, 1, 18, TimeUnit.MILLISECONDS);
         logger.error("License receiver has been started");
     }
 

@@ -99,9 +99,6 @@ public class Client {
                     if (response.statusCode() == Const.HTTP_OK) {
                         Repository.rpsSuccess.incrementAndGet();
                         Repository.incMoneySuccess();
-                        if (Repository.wallet.size() > 50_000) {
-                            return;
-                        }
                         var cash = JsonIterator.deserialize(response.body(), int[].class);
                         for (int i : cash) {
                             Repository.addMoney(i);
@@ -203,20 +200,22 @@ public class Client {
 
 
     public void exploreAsync63(Area area) {
-        httpClient.sendAsync(createExploreRequest(area), HttpResponse.BodyHandlers.ofString())
-                .thenAcceptAsync(response -> {
-                    if (response.statusCode() == Const.HTTP_OK) {
-                        Repository.rpsSuccess.incrementAndGet();
-                        var explored = JsonIterator.deserialize(response.body(), Explored.class);
-                        if (explored.getAmount() > 1) {
-                            Repository.explored63Done.incrementAndGet();
-                            Repository.exploredAreas63.add(explored);
-                        } else {
-                            Repository.skipped63.incrementAndGet();
-                        }
-                    } else {
-                        Repository.incExplorerError();
-                    }
-                }, responseEx);
+        try {
+            var response = httpClient.send(createExploreRequest(area), HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == Const.HTTP_OK) {
+                Repository.rpsSuccess.incrementAndGet();
+                var explored = JsonIterator.deserialize(response.body(), Explored.class);
+                if (explored.getAmount() > 0) {
+                    Repository.explored63Done.incrementAndGet();
+                    Repository.exploredAreas63.put(explored);
+                } else {
+                    Repository.skipped63.incrementAndGet();
+                }
+            } else {
+                Repository.incExplorerError();
+            }
+        } catch (Exception e) {
+            Repository.incExplorerError();
+        }
     }
 }

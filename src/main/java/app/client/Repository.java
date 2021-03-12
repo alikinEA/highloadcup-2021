@@ -16,7 +16,7 @@ public class Repository {
     private static final BlockingQueue<HttpRequest> moneyRetry = new LinkedBlockingDeque<>();
     public static final BlockingQueue<Explored> exploredAreas1 = new LinkedBlockingQueue<>();
     private static final BlockingQueue<Explored> exploredAreas2 = new LinkedBlockingQueue<>();
-    public static  final PriorityBlockingQueue<Explored> exploredAreas63 = new PriorityBlockingQueue<>(30_000, Comparator.comparingInt(Explored::getAmount).reversed());
+    public static  final BlockingQueue<Explored> exploredAreas63 = new LinkedBlockingQueue<>(4);
     private static final AtomicInteger digSuccess = new AtomicInteger(0);
     private static final AtomicInteger digMiss = new AtomicInteger(0);
     private static final AtomicInteger digError = new AtomicInteger(0);
