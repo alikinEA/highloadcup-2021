@@ -4,9 +4,6 @@ import app.Application;
 import app.client.models.*;
 import com.jsoniter.JsonIterator;
 import com.jsoniter.output.JsonStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -18,7 +15,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Client {
-    private static Logger logger = LoggerFactory.getLogger(Client.class);
 
     private final String url;
     private final ExecutorService responseEx = Executors.newFixedThreadPool(2);
@@ -45,13 +41,12 @@ public class Client {
                 .build();
     }
 
-    private void handleDigResponse(HttpResponse<String> response, DigFull fullDig) {
+    private void handleDigResponse(HttpResponse<byte[]> response, DigFull fullDig) {
         if (response.statusCode() == Const.HTTP_OK || response.statusCode() == Const.HTTP_NOT_FOUND) {
             Repository.rpsSuccess.incrementAndGet();
             var license = fullDig.getLicense();
             var digRq = fullDig.getDigRq();
             var amount = fullDig.getAmount();
-            var currentAmount = fullDig.getCurrentAmount();
 
             license.setDigAllowed(license.getDigAllowed() - 1);
             digRq.setDepth(digRq.getDepth() + 1);
@@ -59,7 +54,6 @@ public class Client {
             if (response.statusCode() == Const.HTTP_OK) {
                 fullDig.setCurrentAmount(fullDig.getCurrentAmount() + 1);
                 Repository.incDigSuccess();
-                //logger.error("Dig success = " + fullDig + Repository.getActionsInfo());
                 var treasures = JsonIterator.deserialize(response.body(), String[].class);
                 for (int i = 0; i < treasures.length; i++) {
                     getMyMoney(treasures[i]);
@@ -69,7 +63,6 @@ public class Client {
             }
             if (digRq.getDepth() == Application.GRABTIEFE && fullDig.getCurrentAmount() < amount) {
                 Repository.incTreasureNotFound();
-                //logger.error("Dug 10 time = " + fullDig + Repository.getActionsInfo());
             }
 
             if (digRq.getDepth() < Application.GRABTIEFE && fullDig.getCurrentAmount() < amount) {
@@ -85,7 +78,6 @@ public class Client {
             }
         } else {
             Repository.incDigError();
-            logger.error("Dig error = " + response.body() + fullDig);
         }
     }
 
@@ -94,7 +86,7 @@ public class Client {
     }
 
     public void getMyMoney(HttpRequest httpRequest) {
-        httpClient.sendAsync(httpRequest, HttpResponse.BodyHandlers.ofString())
+        httpClient.sendAsync(httpRequest, HttpResponse.BodyHandlers.ofByteArray())
                 .thenAcceptAsync(response -> {
                     if (response.statusCode() == Const.HTTP_OK) {
                         Repository.rpsSuccess.incrementAndGet();
@@ -146,15 +138,12 @@ public class Client {
         }
     }
 
-    public CompletableFuture<HttpResponse<String>> exploreBlocking(HttpRequest request) {
-        return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString());
-    }
-    public CompletableFuture<HttpResponse<String>> exploreBlocking(Area area) {
-        return exploreBlocking(createExploreRequest(area));
+    public CompletableFuture<HttpResponse<byte[]>> exploreBlocking(Area area) {
+        return httpClient.sendAsync(createExploreRequest(area), HttpResponse.BodyHandlers.ofByteArray());
     }
 
-    public void getNewPaidLicenseAsync(Integer cash) throws URISyntaxException, IOException, InterruptedException {
-        httpClient.sendAsync(createPaidLicenseRequest(cash), HttpResponse.BodyHandlers.ofString())
+    public void getNewPaidLicenseAsync(Integer cash) throws URISyntaxException {
+        httpClient.sendAsync(createPaidLicenseRequest(cash), HttpResponse.BodyHandlers.ofByteArray())
                 .thenAcceptAsync(response -> {
                     Repository.licenseAttempt.incrementAndGet();
                     if (response.statusCode() != Const.HTTP_OK) {
@@ -168,12 +157,12 @@ public class Client {
                     }, responseEx);
     }
 
-    public HttpResponse<String> getNewFreeLicense() throws IOException, InterruptedException {
-        return httpClient.send(newLicenseR, HttpResponse.BodyHandlers.ofString());
+    public HttpResponse<byte[]> getNewFreeLicense() throws IOException, InterruptedException {
+        return httpClient.send(newLicenseR, HttpResponse.BodyHandlers.ofByteArray());
     }
 
     public void digAsync(DigFull digFull) {
-        httpClient.sendAsync(createDigRequest(digFull.getDigRq()), HttpResponse.BodyHandlers.ofString())
+        httpClient.sendAsync(createDigRequest(digFull.getDigRq()), HttpResponse.BodyHandlers.ofByteArray())
                 .thenAcceptAsync(response -> handleDigResponse(response, digFull));
     }
 
@@ -201,7 +190,7 @@ public class Client {
 
     public void explore63(Area area) {
         try {
-            var response = httpClient.send(createExploreRequest(area), HttpResponse.BodyHandlers.ofString());
+            var response = httpClient.send(createExploreRequest(area), HttpResponse.BodyHandlers.ofByteArray());
             if (response.statusCode() == Const.HTTP_OK) {
                 Repository.rpsSuccess.incrementAndGet();
                 var explored = JsonIterator.deserialize(response.body(), Explored.class);
