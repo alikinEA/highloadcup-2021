@@ -4,13 +4,13 @@ import app.Application;
 import app.client.models.*;
 import com.jsoniter.JsonIterator;
 import com.jsoniter.output.JsonStream;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -21,8 +21,8 @@ public class Client {
     private final URI cashURI;
     private final URI digURI;
     private final URI exploreURI;
-    private final ExecutorService responseEx = Executors.newFixedThreadPool(2);
-    private final ExecutorService requestEx = Executors.newFixedThreadPool(2);
+    private final ExecutorService responseEx = Executors.newFixedThreadPool(1);
+    private final ExecutorService requestEx = Executors.newFixedThreadPool(1);
     private final HttpRequest newLicenseR;
 
     private final HttpClient httpClient = HttpClient.newBuilder()
@@ -38,7 +38,7 @@ public class Client {
         newLicenseR = HttpRequest.newBuilder()
                 .uri(licensesURI)
                 .headers(Const.CONTENT_TYPE, Const.APPLICATION_JSON)
-                .POST(HttpRequest.BodyPublishers.ofString("[]"))
+                .POST(HttpRequest.BodyPublishers.ofByteArray(Const.EMPTY_ARRAY))
                 .build();
     }
     private HttpRequest createPaidLicenseRequest(Integer cash) {
@@ -134,8 +134,8 @@ public class Client {
                 }, responseEx);
     }
 
-    public CompletableFuture<HttpResponse<byte[]>> exploreBlocking(Area area) {
-        return httpClient.sendAsync(createExploreRequest(area), HttpResponse.BodyHandlers.ofByteArray());
+    public HttpResponse<byte[]> exploreBlocking(Area area) throws IOException, InterruptedException {
+        return httpClient.send(createExploreRequest(area), HttpResponse.BodyHandlers.ofByteArray());
     }
 
     public void getNewPaidLicenseAsync(Integer cash) {
@@ -165,8 +165,7 @@ public class Client {
     public Explored doExplore(Area area) {
         while (true) {
             try {
-                var responseF = exploreBlocking(area);
-                var response = responseF.get();
+                var response = exploreBlocking(area);
                 if (response.statusCode() != Const.HTTP_OK) {
                     Thread.sleep(10);
                 } else {
