@@ -199,7 +199,7 @@ public class Client {
     }
 
 
-    public void exploreAsync63(Area area) {
+    public void explore63(Area area) {
         try {
             var response = httpClient.send(createExploreRequest(area), HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == Const.HTTP_OK) {

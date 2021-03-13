@@ -53,9 +53,12 @@ public class Application {
 
         try {
             //logger.error("Single = " + client.exploreBlocking(area).body());
-            for (int x1 = 0; x1 < 3100; x1++) {
-                for (int y1 = 0; y1 < 3100; y1 = y1 + STEP63) {
-                    client.exploreAsync63(new Area(x1, y1, 1, STEP63));
+            var area = new Area(0, 0, 1, STEP63);
+            for (int x = 0; x < 3100; x++) {
+                for (int y = 0; y < 3100; y = y + STEP63) {
+                    area.setPosX(x);
+                    area.setPosY(y);
+                    client.explore63(area);
                 }
             }
         } catch (Exception e) {
@@ -77,7 +80,7 @@ public class Application {
             }
             //logger.error("Background stat = " + Repository.getActionsInfo());
         }, 1, 1, TimeUnit.MILLISECONDS);
-        logger.error("License receiver has been started");
+        logger.error("RunBackgroundMoneyRetry has been started");
     }
 
     private void runBackgroundExplore63() {
@@ -88,8 +91,10 @@ public class Application {
                 try {
                     Explored explore63 = Repository.exploredAreas63.take();
                     int summ = 0;
+                    var area = new Area(explore63.getArea().getPosX(), explore63.getArea().getPosY(), 1, STEP3);
                     for (int i = 0; i < 63; i = i + STEP3) {
-                        var explored3 = client.doExplore(new Area(explore63.getArea().getPosX(), explore63.getArea().getPosY() + i, 1, STEP3));
+                        area.setPosY(explore63.getArea().getPosY() + i);
+                        var explored3 = client.doExplore(area);
                         summ = summ + explored3.getAmount();
                         if (explored3.getAmount() > 0) {
                             findTh3(explored3);
@@ -115,8 +120,10 @@ public class Application {
 
     private void findTh3(Explored explored3) {
         int summ = 0;
+        var area = new Area(explored3.getArea().getPosX(), explored3.getArea().getPosY(), 1, 1);
         for (int i = 0; i < 3; i++) {
-            var explored1 = client.doExplore(new Area(explored3.getArea().getPosX(), explored3.getArea().getPosY() + i, 1, 1));
+            area.setPosY(explored3.getArea().getPosY() + i);
+            var explored1 = client.doExplore(area);
             summ = summ + explored1.getAmount();
             if (explored1.getAmount() > 0) {
                 Repository.addExplored(explored1);
@@ -139,9 +146,9 @@ public class Application {
                 tryToGetLicense();
             }
             collectGCStats();
-            logger.error("Background stat = " + Repository.getActionsInfo());
+           // logger.error("Background stat = " + Repository.getActionsInfo());
         }, 1, 18, TimeUnit.MILLISECONDS);
-        logger.error("License receiver has been started");
+        logger.error("runBackgroundLicenses receiver has been started");
     }
 
     private void tryToGetLicense() {
