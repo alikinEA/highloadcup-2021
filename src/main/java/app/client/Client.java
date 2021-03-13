@@ -17,6 +17,10 @@ import java.util.concurrent.Executors;
 public class Client {
 
     private final String url;
+    private final URI licensesURI;
+    private final URI cashURI;
+    private final URI digURI;
+    private final URI exploreURI;
     private final ExecutorService responseEx = Executors.newFixedThreadPool(2);
     private final ExecutorService requestEx = Executors.newFixedThreadPool(2);
     private final HttpRequest newLicenseR;
@@ -27,17 +31,45 @@ public class Client {
 
     public Client(String address, int port) throws URISyntaxException {
         url = "http://" + address + ":" + port;
+        licensesURI = new URI(url + "/licenses");
+        cashURI = new URI(url + "/cash");
+        digURI = new URI(url + "/dig");
+        exploreURI = new URI(url + "/explore");
         newLicenseR = HttpRequest.newBuilder()
-                .uri(new URI(url + "/licenses"))
+                .uri(licensesURI)
                 .headers(Const.CONTENT_TYPE, Const.APPLICATION_JSON)
                 .POST(HttpRequest.BodyPublishers.ofString("[]"))
                 .build();
     }
-    private HttpRequest createPaidLicenseRequest(Integer cash) throws URISyntaxException {
+    private HttpRequest createPaidLicenseRequest(Integer cash) {
         return HttpRequest.newBuilder()
-                .uri(new URI(url + "/licenses"))
+                .uri(licensesURI)
                 .headers(Const.CONTENT_TYPE, Const.APPLICATION_JSON)
                 .POST(HttpRequest.BodyPublishers.ofString("[" + cash + "]"))
+                .build();
+    }
+
+    private HttpRequest createCashRequest(String treasureId) {
+        return HttpRequest.newBuilder()
+                .uri(cashURI)
+                .headers(Const.CONTENT_TYPE, Const.APPLICATION_JSON)
+                .POST(HttpRequest.BodyPublishers.ofString("\"" + treasureId + "\""))
+                .build();
+    }
+
+    private HttpRequest createDigRequest(DigRq digRq) {
+        return HttpRequest.newBuilder()
+                .uri(digURI)
+                .headers(Const.CONTENT_TYPE, Const.APPLICATION_JSON)
+                .POST(HttpRequest.BodyPublishers.ofString(JsonStream.serialize(digRq)))
+                .build();
+    }
+
+    private HttpRequest createExploreRequest(Area area) {
+        return HttpRequest.newBuilder()
+                .uri(exploreURI)
+                .headers(Const.CONTENT_TYPE, Const.APPLICATION_JSON)
+                .POST(HttpRequest.BodyPublishers.ofString(JsonStream.serialize(area)))
                 .build();
     }
 
@@ -91,8 +123,8 @@ public class Client {
                     if (response.statusCode() == Const.HTTP_OK) {
                         Repository.rpsSuccess.incrementAndGet();
                         Repository.incMoneySuccess();
-                        var cash = JsonIterator.deserialize(response.body(), int[].class);
-                        for (int i : cash) {
+                        var cash = JsonIterator.deserialize(response.body(), Integer[].class);
+                        for (Integer i : cash) {
                             Repository.addMoney(i);
                         }
                     } else {
@@ -102,47 +134,11 @@ public class Client {
                 }, responseEx);
     }
 
-    private HttpRequest createCashRequest(String treasureId) {
-        try {
-            return HttpRequest.newBuilder()
-                    .uri(new URI(url + "/cash"))
-                    .headers(Const.CONTENT_TYPE, Const.APPLICATION_JSON)
-                    .POST(HttpRequest.BodyPublishers.ofString("\"" + treasureId + "\""))
-                    .build();
-        } catch (URISyntaxException e) {
-            throw new RuntimeException("createCashRequest", e);
-        }
-    }
-
-    private HttpRequest createDigRequest(DigRq digRq) {
-        try {
-            return HttpRequest.newBuilder()
-                    .uri(new URI(url + "/dig"))
-                    .headers(Const.CONTENT_TYPE, Const.APPLICATION_JSON)
-                    .POST(HttpRequest.BodyPublishers.ofString(JsonStream.serialize(digRq)))
-                    .build();
-        } catch (URISyntaxException e) {
-            throw new RuntimeException("createDigRequest", e);
-        }
-    }
-
-    private HttpRequest createExploreRequest(Area area) {
-        try {
-            return HttpRequest.newBuilder()
-                    .uri(new URI(url + "/explore"))
-                    .headers(Const.CONTENT_TYPE, Const.APPLICATION_JSON)
-                    .POST(HttpRequest.BodyPublishers.ofString(JsonStream.serialize(area)))
-                    .build();
-        } catch (URISyntaxException e) {
-            throw new RuntimeException("createExploreRequest", e);
-        }
-    }
-
     public CompletableFuture<HttpResponse<byte[]>> exploreBlocking(Area area) {
         return httpClient.sendAsync(createExploreRequest(area), HttpResponse.BodyHandlers.ofByteArray());
     }
 
-    public void getNewPaidLicenseAsync(Integer cash) throws URISyntaxException {
+    public void getNewPaidLicenseAsync(Integer cash) {
         httpClient.sendAsync(createPaidLicenseRequest(cash), HttpResponse.BodyHandlers.ofByteArray())
                 .thenAcceptAsync(response -> {
                     Repository.licenseAttempt.incrementAndGet();

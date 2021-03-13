@@ -6,18 +6,18 @@ import app.client.models.License;
 
 import java.net.http.HttpRequest;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class Repository {
-    private static final BlockingQueue<DigFull> dugFull = new LinkedBlockingDeque<>();
-    public static final BlockingQueue<License> licensesStore = new LinkedBlockingDeque<>();
-    private static final BlockingQueue<HttpRequest> moneyRetry = new LinkedBlockingDeque<>();
+    private static final BlockingQueue<DigFull> dugFull = new LinkedBlockingQueue<>();
+    public static final BlockingQueue<License> licensesStore = new LinkedBlockingQueue<>();
+    private static final BlockingQueue<HttpRequest> moneyRetry = new LinkedBlockingQueue<>();
     public static final BlockingQueue<Explored> exploredAreas1 = new LinkedBlockingQueue<>();
     private static final BlockingQueue<Explored> exploredAreas2 = new LinkedBlockingQueue<>();
     public static  final BlockingQueue<Explored> exploredAreas63 = new LinkedBlockingQueue<>(4);
+    public static final BlockingQueue<Integer> wallet = new LinkedBlockingQueue<>(30_000);
+
     private static final AtomicInteger digSuccess = new AtomicInteger(0);
     private static final AtomicInteger digMiss = new AtomicInteger(0);
     private static final AtomicInteger digError = new AtomicInteger(0);
@@ -29,7 +29,6 @@ public class Repository {
     private static final AtomicInteger richPlaces = new AtomicInteger(0);
     private static final AtomicInteger places = new AtomicInteger(0);
 
-    public static final BlockingQueue<Integer> wallet = new LinkedBlockingDeque<>(1_000_000);
     private static final AtomicInteger paidLicenses = new AtomicInteger(0);
     private static final AtomicInteger freeLicenses = new AtomicInteger(0);
     public static final AtomicInteger licenseFull = new AtomicInteger(0);
