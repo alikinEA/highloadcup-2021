@@ -205,7 +205,7 @@ public class Client {
             if (response.statusCode() == Const.HTTP_OK) {
                 Repository.rpsSuccess.incrementAndGet();
                 var explored = JsonIterator.deserialize(response.body(), Explored.class);
-                if (explored.getAmount() > 0) {
+                if (explored.getAmount() > 1) {
                     Repository.explored63Done.incrementAndGet();
                     Repository.exploredAreas63.put(explored);
                 } else {

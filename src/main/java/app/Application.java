@@ -157,7 +157,7 @@ public class Application {
     private void runBackgroundLicenses() {
         ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
         executorService.scheduleWithFixedDelay(() -> {
-            if (Repository.licensesStore.size() < 4) {
+            if (Repository.licensesStore.size() < 8) {
                 Repository.schedulerAttemptLicense.incrementAndGet();
                 tryToGetLicense();
             }
