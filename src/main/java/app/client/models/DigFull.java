@@ -1,21 +1,18 @@
 package app.client.models;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 public class DigFull {
     private DigRq digRq;
     private int amount;
-    private final AtomicInteger currentAmount;
+    private int currentAmount;
     private License license;
 
     public DigFull() {
-        this.currentAmount = new AtomicInteger(0);
     }
 
     public DigFull(DigRq digRq, int amount, int currentAmount, License license) {
         this.digRq = digRq;
         this.amount = amount;
-        this.currentAmount = new AtomicInteger(currentAmount);
+        this.currentAmount = currentAmount;
         this.license = license;
     }
 
@@ -37,8 +34,12 @@ public class DigFull {
         this.amount = amount;
     }
 
-    public AtomicInteger getCurrentAmount() {
+    public int getCurrentAmount() {
         return currentAmount;
+    }
+
+    public void setCurrentAmount(int currentAmount) {
+        this.currentAmount = currentAmount;
     }
 
     public License getLicense() {
@@ -54,7 +55,7 @@ public class DigFull {
         return "DigFull{" +
                 "digRq=" + digRq +
                 ", amount=" + amount +
-                ", currentAmount=" + currentAmount.get() +
+                ", currentAmount=" + currentAmount +
                 ", license=" + license +
                 '}';
     }

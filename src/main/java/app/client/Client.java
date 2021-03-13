@@ -57,7 +57,7 @@ public class Client {
             digRq.setDepth(digRq.getDepth() + 1);
 
             if (response.statusCode() == Const.HTTP_OK) {
-                currentAmount.incrementAndGet();
+                fullDig.setCurrentAmount(fullDig.getCurrentAmount() + 1);
                 Repository.incDigSuccess();
                 //logger.error("Dig success = " + fullDig + Repository.getActionsInfo());
                 var treasures = JsonIterator.deserialize(response.body(), String[].class);
@@ -67,12 +67,12 @@ public class Client {
             } else {
                 Repository.incDigMiss();
             }
-            if (digRq.getDepth() == Application.GRABTIEFE && currentAmount.get() < amount) {
+            if (digRq.getDepth() == Application.GRABTIEFE && fullDig.getCurrentAmount() < amount) {
                 Repository.incTreasureNotFound();
                 //logger.error("Dug 10 time = " + fullDig + Repository.getActionsInfo());
             }
 
-            if (digRq.getDepth() < Application.GRABTIEFE && currentAmount.get() < amount) {
+            if (digRq.getDepth() < Application.GRABTIEFE && fullDig.getCurrentAmount() < amount) {
                 if (license.getDigAllowed() > 0) {
                     digAsync(fullDig);
                 } else {

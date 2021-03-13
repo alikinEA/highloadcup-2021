@@ -89,9 +89,11 @@ public class Application {
                 try {
                     Explored explore63 = Repository.exploredAreas63.take();
                     int summ = 0;
-                    var area = new Area(explore63.getArea().getPosX(), explore63.getArea().getPosY(), 1, STEP3);
+                    var area = explore63.getArea();
+                    int startY = area.getPosY();
+                    area.setSizeY(STEP3);
                     for (int i = 0; i < 63; i = i + STEP3) {
-                        area.setPosY(explore63.getArea().getPosY() + i);
+                        area.setPosY(startY + i);
                         var explored3 = client.doExplore(area);
                         summ = summ + explored3.getAmount();
                         if (explored3.getAmount() > 0) {
@@ -118,9 +120,11 @@ public class Application {
 
     private void findTh3(Explored explored3) {
         int summ = 0;
-        var area = new Area(explored3.getArea().getPosX(), explored3.getArea().getPosY(), 1, 1);
+        var area = explored3.getArea();
+        int startY = area.getPosY();
+        area.setSizeY(1);
         for (int i = 0; i < 3; i++) {
-            area.setPosY(explored3.getArea().getPosY() + i);
+            area.setPosY(startY + i);
             var explored1 = client.doExplore(area);
             summ = summ + explored1.getAmount();
             if (explored1.getAmount() > 0) {
