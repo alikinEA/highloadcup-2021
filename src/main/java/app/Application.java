@@ -223,13 +223,13 @@ public class Application {
             long count = gc.getCollectionCount();
 
             if(count >= 0) {
-                Repository.totalGarbageCollections.getAndAdd(count);
+                Repository.totalGarbageCollections.addAndGet(count);
             }
 
             long time = gc.getCollectionTime();
 
             if(time >= 0) {
-                Repository.garbageCollectionTime.getAndAdd(time);
+                Repository.garbageCollectionTime.addAndGet(time);
             }
         }
     }
