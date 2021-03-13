@@ -1,14 +1,15 @@
 package app.client;
 
-import app.client.models.*;
+import app.client.models.DigFull;
+import app.client.models.Explored;
+import app.client.models.License;
 
 import java.net.http.HttpRequest;
-import java.util.Comparator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class Repository {
     private static final BlockingQueue<DigFull> dugFull = new LinkedBlockingDeque<>();
@@ -41,6 +42,9 @@ public class Repository {
     public static final AtomicInteger rpsSuccess = new AtomicInteger(0);
     public static final AtomicInteger explored63Done = new AtomicInteger(0);
     public static final AtomicInteger skipped63 = new AtomicInteger(0);
+
+    public static final AtomicLong totalGarbageCollections = new AtomicLong(0);
+    public static final AtomicLong garbageCollectionTime = new AtomicLong(0);
 
 
     public static License takeLicense() {
@@ -130,7 +134,9 @@ public class Repository {
                 + " rpsSuccess " + rpsSuccess.get()
                 + " exploredAreas63 = " + exploredAreas63.size()
                 + " explored63Done = " + explored63Done.get()
-                + " skipped63 = " + skipped63.get();
+                + " skipped63 = " + skipped63.get()
+                + " Total Garbage Collections: " + totalGarbageCollections.get()
+                + " Total Garbage Collection Time (ms): " + garbageCollectionTime.get();
     }
 
     public static int incDigSuccess() {

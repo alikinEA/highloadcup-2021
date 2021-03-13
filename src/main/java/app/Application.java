@@ -8,8 +8,11 @@ import com.jsoniter.JsonIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
 import java.net.URISyntaxException;
 import java.net.http.HttpResponse;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -46,7 +49,6 @@ public class Application {
         runBackgroundLicenses();
         runBackgroundMoneyRetry();
         runBackgroundExplore63();
-        runBackgroundExplore63_2();
         runDigger();
 
         try {
@@ -79,62 +81,37 @@ public class Application {
     }
 
     private void runBackgroundExplore63() {
-        ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
-        executorService.scheduleWithFixedDelay(() -> {
-            try {
-                Explored explore63 = Repository.exploredAreas63.take();
-                int summ = 0;
-                for (int i = 0; i < 63; i = i + STEP3) {
-                    var explored3 = client.doExplore(new Area(explore63.getArea().getPosX(), explore63.getArea().getPosY() + i, 1, STEP3));
-                    summ = summ + explored3.getAmount();
-                    if (explored3.getAmount() > 0) {
-                        findTh3(explored3);
+        ExecutorService executorService = Executors.newFixedThreadPool(2);
+        Runnable explore63Task = () -> {
+            logger.error("explore63Task has been started");
+            while (true) {
+                try {
+                    Explored explore63 = Repository.exploredAreas63.take();
+                    int summ = 0;
+                    for (int i = 0; i < 63; i = i + STEP3) {
+                        var explored3 = client.doExplore(new Area(explore63.getArea().getPosX(), explore63.getArea().getPosY() + i, 1, STEP3));
+                        summ = summ + explored3.getAmount();
+                        if (explored3.getAmount() > 0) {
+                            findTh3(explored3);
+                        }
+
+                        if (summ == explore63.getAmount()) {
+                            break;
+                        }
                     }
 
-                    if (summ == explore63.getAmount()) {
-                        break;
+                    if (summ != explore63.getAmount()) {
+                        Repository.incTreasureNotFound();
                     }
-                }
-
-                if (summ != explore63.getAmount()) {
+                } catch (InterruptedException e) {
                     Repository.incTreasureNotFound();
                 }
-            } catch (InterruptedException e) {
-                Repository.incTreasureNotFound();
             }
-            //logger.error("Background stat = " + Repository.getActionsInfo());
-        }, 1, 1, TimeUnit.MILLISECONDS);
-        logger.error("License receiver has been started");
+        };
+        executorService.execute(explore63Task);
+        executorService.execute(explore63Task);
     }
 
-    private void runBackgroundExplore63_2() {
-        ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
-        executorService.scheduleWithFixedDelay(() -> {
-            try {
-                Explored explore63 = Repository.exploredAreas63.take();
-                int summ = 0;
-                for (int i = 0; i < 63; i = i + STEP3) {
-                    var explored3 = client.doExplore(new Area(explore63.getArea().getPosX(), explore63.getArea().getPosY() + i, 1, STEP3));
-                    summ = summ + explored3.getAmount();
-                    if (explored3.getAmount() > 0) {
-                        findTh3(explored3);
-                    }
-
-                    if (summ == explore63.getAmount()) {
-                        break;
-                    }
-                }
-
-                if (summ != explore63.getAmount()) {
-                    Repository.incTreasureNotFound();
-                }
-            } catch (InterruptedException e) {
-                Repository.incTreasureNotFound();
-            }
-            //logger.error("Background stat = " + Repository.getActionsInfo());
-        }, 1, 1, TimeUnit.MILLISECONDS);
-        logger.error("License receiver has been started");
-    }
 
     private void findTh3(Explored explored3) {
         int summ = 0;
@@ -161,6 +138,7 @@ public class Application {
                 Repository.schedulerAttemptLicense.incrementAndGet();
                 tryToGetLicense();
             }
+            collectGCStats();
             logger.error("Background stat = " + Repository.getActionsInfo());
         }, 1, 18, TimeUnit.MILLISECONDS);
         logger.error("License receiver has been started");
@@ -227,6 +205,24 @@ public class Application {
                 }
             } catch (Exception e) {
 
+            }
+        }
+    }
+
+    public void collectGCStats() {
+        for(GarbageCollectorMXBean gc :
+                ManagementFactory.getGarbageCollectorMXBeans()) {
+
+            long count = gc.getCollectionCount();
+
+            if(count >= 0) {
+                Repository.totalGarbageCollections.getAndAdd(count);
+            }
+
+            long time = gc.getCollectionTime();
+
+            if(time >= 0) {
+                Repository.garbageCollectionTime.getAndAdd(time);
             }
         }
     }

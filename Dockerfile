@@ -1,4 +1,4 @@
-FROM adoptopenjdk/openjdk11
+FROM shipilev/openjdk:11
 ADD /target/highloadcup-2021-1.0-jar-with-dependencies.jar highloadcup-2021-1.0.jar
-ENV JAVA_OPTS="-XX:CompileThreshold=1 -XX:GCTimeRatio=99 -XX:+UseSerialGC -Xmx1900m -Xms1900m -server"
+ENV JAVA_OPTS="-XX:+UseShenandoahGC -Xlog:gc -Xmx2048m -Xms2048m -server"
 ENTRYPOINT exec java $JAVA_OPTS -jar highloadcup-2021-1.0.jar
