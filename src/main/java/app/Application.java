@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.net.URISyntaxException;
-import java.net.http.HttpResponse;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -78,7 +77,6 @@ public class Application {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            //logger.error("Background stat = " + Repository.getActionsInfo());
         }, 1, 1, TimeUnit.MILLISECONDS);
         logger.error("RunBackgroundMoneyRetry has been started");
     }
@@ -145,8 +143,8 @@ public class Application {
                 Repository.schedulerAttemptLicense.incrementAndGet();
                 tryToGetLicense();
             }
-            collectGCStats();
-           // logger.error("Background stat = " + Repository.getActionsInfo());
+            logger.error("Background stat = " + Repository.getActionsInfo());
+            printGCStats();
         }, 1, 18, TimeUnit.MILLISECONDS);
         logger.error("runBackgroundLicenses receiver has been started");
     }
@@ -216,21 +214,16 @@ public class Application {
         }
     }
 
-    public void collectGCStats() {
-        for(GarbageCollectorMXBean gc :
-                ManagementFactory.getGarbageCollectorMXBeans()) {
+    public void printGCStats() {
+        /*logger.error("Heap" +  ManagementFactory.getMemoryMXBean().getHeapMemoryUsage());
+        logger.error("NonHeap" + ManagementFactory.getMemoryMXBean().getNonHeapMemoryUsage());
+        List<MemoryPoolMXBean> beans = ManagementFactory.getMemoryPoolMXBeans();
+        for (MemoryPoolMXBean bean: beans) {
+            logger.error(bean.getName() + " : " + bean.getUsage());
+        }*/
 
-            long count = gc.getCollectionCount();
-
-            if(count >= 0) {
-                Repository.totalGarbageCollections.addAndGet(count);
-            }
-
-            long time = gc.getCollectionTime();
-
-            if(time >= 0) {
-                Repository.garbageCollectionTime.addAndGet(time);
-            }
+        for (GarbageCollectorMXBean bean: ManagementFactory.getGarbageCollectorMXBeans()) {
+            logger.error(bean.getName() + " : " + bean.getCollectionCount() + " : " + bean.getCollectionTime());
         }
     }
 }
