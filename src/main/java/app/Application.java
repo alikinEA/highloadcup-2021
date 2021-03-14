@@ -123,7 +123,7 @@ public class Application {
         var area = explored3.getArea();
         int startY = area.getPosY();
         area.setSizeY(1);
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 2; i++) {
             area.setPosY(startY + i);
             var explored1 = client.doExplore(area);
             summ = summ + explored1.getAmount();
@@ -132,12 +132,13 @@ public class Application {
             }
 
             if (summ == explored3.getAmount()) {
-                break;
+                return;
             }
         }
-        if (summ != explored3.getAmount()) {
-            Repository.incTreasureNotFound();
-        }
+
+        area.setPosY(startY + 2);
+        Repository.addExplored(new Explored(area, explored3.getAmount() - summ));
+        Repository.skip3Explore.incrementAndGet();
     }
 
     private void runBackgroundLicenses() {

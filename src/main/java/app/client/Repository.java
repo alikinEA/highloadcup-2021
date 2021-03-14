@@ -41,7 +41,7 @@ public class Repository {
     public static final AtomicInteger rpsSuccess = new AtomicInteger(0);
     public static final AtomicInteger explored63Done = new AtomicInteger(0);
     public static final AtomicInteger skipped63 = new AtomicInteger(0);
-
+    public static final AtomicInteger skip3Explore = new AtomicInteger(0);
 
     public static License takeLicense() {
         try {
@@ -130,7 +130,8 @@ public class Repository {
                 + " rpsSuccess " + rpsSuccess.get()
                 + " exploredAreas63 = " + exploredAreas63.size()
                 + " explored63Done = " + explored63Done.get()
-                + " skipped63 = " + skipped63.get();
+                + " skipped63 = " + skipped63.get()
+                + " skip3Explore =" + skip3Explore.get();
     }
 
     public static int incDigSuccess() {
