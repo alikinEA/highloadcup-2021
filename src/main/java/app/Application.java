@@ -17,7 +17,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class Application {
-    private static final int STEP63 = 63;
+    private static final int STEP_MAIN = 63;
     private static final int STEP3 = 3;
     public static final int GRABTIEFE = 11;
 
@@ -30,7 +30,7 @@ public class Application {
     }
 
     public static void main(String[] args) throws URISyntaxException {
-        logger.error("Step = " + STEP63 + " GRABTIEFE = " + GRABTIEFE);
+        logger.error("Step = " + STEP_MAIN + " GRABTIEFE = " + GRABTIEFE);
         var address = System.getenv("ADDRESS");
 
         logger.error("ADDRESS = " + address);
@@ -47,17 +47,17 @@ public class Application {
         waitingForServer();
         runBackgroundLicenses();
         runBackgroundMoneyRetry();
-        runBackgroundExplore63();
+        runBackgroundExploreMain();
         runDigger();
 
         try {
             //logger.error("Single = " + client.exploreBlocking(area).body());
-            var area = new Area(0, 0, 1, STEP63);
+            var area = new Area(0, 0, 1, STEP_MAIN);
             for (int x = 0; x < 3100; x++) {
-                for (int y = 0; y < 3100; y = y + STEP63) {
+                for (int y = 0; y < 3100; y = y + STEP_MAIN) {
                     area.setPosX(x);
                     area.setPosY(y);
-                    client.explore63(area);
+                    client.exploreMain(area);
                 }
             }
         } catch (Exception e) {
@@ -81,18 +81,18 @@ public class Application {
         logger.error("RunBackgroundMoneyRetry has been started");
     }
 
-    private void runBackgroundExplore63() {
+    private void runBackgroundExploreMain() {
         ExecutorService executorService = Executors.newFixedThreadPool(2);
-        Runnable explore63Task = () -> {
+        Runnable exploreMainTask = () -> {
             logger.error("explore63Task has been started");
             while (true) {
                 try {
-                    Explored explore63 = Repository.exploredAreas63.take();
+                    Explored exploreMain = Repository.exploredAreasMain.take();
                     int summ = 0;
-                    var area = explore63.getArea();
+                    var area = exploreMain.getArea();
                     int startY = area.getPosY();
                     area.setSizeY(STEP3);
-                    for (int i = 0; i < 63; i = i + STEP3) {
+                    for (int i = 0; i < STEP_MAIN - STEP3; i = i + STEP3) {
                         area.setPosY(startY + i);
                         var explored3 = client.doExplore(area);
                         summ = summ + explored3.getAmount();
@@ -100,21 +100,24 @@ public class Application {
                             findTh3(explored3);
                         }
 
-                        if (summ == explore63.getAmount()) {
+                        if (summ == exploreMain.getAmount()) {
                             break;
                         }
                     }
 
-                    if (summ != explore63.getAmount()) {
-                        Repository.incTreasureNotFound();
+                    if (summ != exploreMain.getAmount()) {
+                        Repository.skipLastMainExplore.incrementAndGet();
+                        area.setPosY(startY + (STEP_MAIN - STEP3));
+                        findTh3(new Explored(area, exploreMain.getAmount() - summ));
                     }
+
                 } catch (InterruptedException e) {
                     Repository.incTreasureNotFound();
                 }
             }
         };
-        executorService.execute(explore63Task);
-        executorService.execute(explore63Task);
+        executorService.execute(exploreMainTask);
+        executorService.execute(exploreMainTask);
     }
 
 
@@ -123,7 +126,7 @@ public class Application {
         var area = explored3.getArea();
         int startY = area.getPosY();
         area.setSizeY(1);
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < STEP3 - 1; i++) {
             area.setPosY(startY + i);
             var explored1 = client.doExplore(area);
             summ = summ + explored1.getAmount();
@@ -136,9 +139,9 @@ public class Application {
             }
         }
 
-        area.setPosY(startY + 2);
+        area.setPosY(startY + (STEP3 - 1));
         Repository.addExplored(new Explored(area, explored3.getAmount() - summ));
-        Repository.skip3Explore.incrementAndGet();
+        Repository.skipLast3Explore.incrementAndGet();
     }
 
     private void runBackgroundLicenses() {

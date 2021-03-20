@@ -183,17 +183,17 @@ public class Client {
     }
 
 
-    public void explore63(Area area) {
+    public void exploreMain(Area area) {
         try {
             var response = httpClient.send(createExploreRequest(area), HttpResponse.BodyHandlers.ofByteArray());
             if (response.statusCode() == Const.HTTP_OK) {
                 Repository.rpsSuccess.incrementAndGet();
                 var explored = JsonIterator.deserialize(response.body(), Explored.class);
                 if (explored.getAmount() > 2) {
-                    Repository.explored63Done.incrementAndGet();
-                    Repository.exploredAreas63.put(explored);
+                    Repository.exploredMainDone.incrementAndGet();
+                    Repository.exploredAreasMain.put(explored);
                 } else {
-                    Repository.skipped63.incrementAndGet();
+                    Repository.skippedMain.incrementAndGet();
                 }
             } else {
                 Repository.incExplorerError();

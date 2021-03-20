@@ -15,7 +15,7 @@ public class Repository {
     private static final BlockingQueue<HttpRequest> moneyRetry = new LinkedBlockingQueue<>();
     public static final BlockingQueue<Explored> exploredAreas1 = new LinkedBlockingQueue<>();
     private static final BlockingQueue<Explored> exploredAreas2 = new LinkedBlockingQueue<>();
-    public static  final BlockingQueue<Explored> exploredAreas63 = new LinkedBlockingQueue<>(4);
+    public static  final BlockingQueue<Explored> exploredAreasMain = new LinkedBlockingQueue<>(4);
     public static final BlockingQueue<Integer> wallet = new LinkedBlockingQueue<>(30_000);
 
     private static final AtomicInteger digSuccess = new AtomicInteger(0);
@@ -39,9 +39,10 @@ public class Repository {
 
     public static final AtomicInteger explorerError = new AtomicInteger(0);
     public static final AtomicInteger rpsSuccess = new AtomicInteger(0);
-    public static final AtomicInteger explored63Done = new AtomicInteger(0);
-    public static final AtomicInteger skipped63 = new AtomicInteger(0);
-    public static final AtomicInteger skip3Explore = new AtomicInteger(0);
+    public static final AtomicInteger exploredMainDone = new AtomicInteger(0);
+    public static final AtomicInteger skippedMain = new AtomicInteger(0);
+    public static final AtomicInteger skipLast3Explore = new AtomicInteger(0);
+    public static final AtomicInteger skipLastMainExplore = new AtomicInteger(0);
 
     public static License takeLicense() {
         try {
@@ -128,10 +129,11 @@ public class Repository {
                 + " schedulerMoneyRetry " + schedulerMoneyRetry.get()
                 + " schedulerAttemptLicense " + schedulerAttemptLicense.get()
                 + " rpsSuccess " + rpsSuccess.get()
-                + " exploredAreas63 = " + exploredAreas63.size()
-                + " explored63Done = " + explored63Done.get()
-                + " skipped63 = " + skipped63.get()
-                + " skip3Explore =" + skip3Explore.get();
+                + " exploredAreasMain = " + exploredAreasMain.size()
+                + " exploredMainDone = " + exploredMainDone.get()
+                + " skippedMain = " + skippedMain.get()
+                + " skipLast3Explore =" + skipLast3Explore.get()
+                + " skipLastMainExplore =" + skipLastMainExplore.get();
     }
 
     public static int incDigSuccess() {
