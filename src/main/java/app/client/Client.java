@@ -86,9 +86,13 @@ public class Client {
             if (response.statusCode() == Const.HTTP_OK) {
                 fullDig.setCurrentAmount(fullDig.getCurrentAmount() + 1);
                 Repository.incDigSuccess();
-                var treasures = JsonIterator.deserialize(response.body(), String[].class);
-                for (int i = 0; i < treasures.length; i++) {
-                    getMyMoney(treasures[i]);
+                if (digRq.getDepth() > 3) {
+                    var treasures = JsonIterator.deserialize(response.body(), String[].class);
+                    for (int i = 0; i < treasures.length; i++) {
+                        getMyMoney(treasures[i]);
+                    }
+                } else {
+                    Repository.skipTreasure.incrementAndGet();
                 }
             } else {
                 Repository.incDigMiss();

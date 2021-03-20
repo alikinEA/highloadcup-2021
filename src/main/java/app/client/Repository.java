@@ -15,7 +15,7 @@ public class Repository {
     private static final BlockingQueue<HttpRequest> moneyRetry = new LinkedBlockingQueue<>();
     public static final BlockingQueue<Explored> exploredAreas1 = new LinkedBlockingQueue<>();
     private static final BlockingQueue<Explored> exploredAreas2 = new LinkedBlockingQueue<>();
-    public static  final BlockingQueue<Explored> exploredAreasMain = new LinkedBlockingQueue<>(4);
+    public static  final BlockingQueue<Explored> exploredAreasMain = new LinkedBlockingQueue<>(2);
     public static final BlockingQueue<Integer> wallet = new LinkedBlockingQueue<>(30_000);
 
     private static final AtomicInteger digSuccess = new AtomicInteger(0);
@@ -43,6 +43,8 @@ public class Repository {
     public static final AtomicInteger skippedMain = new AtomicInteger(0);
     public static final AtomicInteger skipLast3Explore = new AtomicInteger(0);
     public static final AtomicInteger skipLastMainExplore = new AtomicInteger(0);
+
+    public static final AtomicInteger skipTreasure = new AtomicInteger(0);
 
     public static License takeLicense() {
         try {
@@ -133,7 +135,8 @@ public class Repository {
                 + " exploredMainDone = " + exploredMainDone.get()
                 + " skippedMain = " + skippedMain.get()
                 + " skipLast3Explore =" + skipLast3Explore.get()
-                + " skipLastMainExplore =" + skipLastMainExplore.get();
+                + " skipLastMainExplore =" + skipLastMainExplore.get()
+                + " skipTreasure =" + skipTreasure.get();
     }
 
     public static int incDigSuccess() {
