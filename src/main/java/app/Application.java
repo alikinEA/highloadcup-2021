@@ -153,7 +153,7 @@ public class Application {
             }
             logger.error("Background stat = " + Repository.getActionsInfo());
             printGCStats();
-        }, 1, 17, TimeUnit.MILLISECONDS);
+        }, 1, 16, TimeUnit.MILLISECONDS);
         logger.error("runBackgroundLicenses receiver has been started");
     }
 
