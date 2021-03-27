@@ -108,7 +108,9 @@ public class Application {
                     if (summ != exploreMain.getAmount()) {
                         Repository.skipLastMainExplore.incrementAndGet();
                         area.setPosY(startY + (STEP_MAIN - STEP3));
-                        findTh3(new Explored(area, exploreMain.getAmount() - summ));
+                        exploreMain.setArea(area);
+                        exploreMain.setAmount(exploreMain.getAmount() - summ);
+                        findTh3(exploreMain);
                     }
 
                 } catch (InterruptedException e) {
@@ -140,14 +142,16 @@ public class Application {
         }
 
         area.setPosY(startY + (STEP3 - 1));
-        Repository.addExplored(new Explored(area, explored3.getAmount() - summ));
+        explored3.setArea(area);
+        explored3.setAmount(explored3.getAmount() - summ);
+        Repository.addExplored(explored3);
         Repository.skipLast3Explore.incrementAndGet();
     }
 
     private void runBackgroundLicenses() {
         ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
         executorService.scheduleWithFixedDelay(() -> {
-            if (Repository.licensesStore.size() < 8) {
+            if (Repository.licensesStore.size() < 11) {
                 Repository.schedulerAttemptLicense.incrementAndGet();
                 tryToGetLicense();
             }
@@ -166,7 +170,7 @@ public class Application {
                 } catch (Exception e) {
                     Repository.addMoney(cash);
                     Repository.incLicenseErrors();
-                    logger.error("license error1 = " + Repository.getActionsInfo(), e);
+                    //logger.error("license error1 = " + Repository.getActionsInfo(), e);
                 }
             } else {
                 var response = client.getNewFreeLicense();
@@ -178,7 +182,7 @@ public class Application {
             }
         } catch (Exception e) {
             Repository.incLicenseErrors();
-            logger.error("license error2 = " + Repository.getActionsInfo(), e);
+            //logger.error("license error2 = " + Repository.getActionsInfo(), e);
         }
     }
 
@@ -217,7 +221,6 @@ public class Application {
                     return;
                 }
             } catch (Exception e) {
-
             }
         }
     }

@@ -134,20 +134,24 @@ public class Client {
     }
 
     public void getMyMoney(HttpRequest httpRequest) {
-        httpClient.sendAsync(httpRequest, HttpResponse.BodyHandlers.ofByteArray())
-                .thenAcceptAsync(response -> {
-                    if (response.statusCode() == Const.HTTP_OK) {
-                        Repository.rpsSuccess.incrementAndGet();
-                        Repository.incMoneySuccess();
-                        var cash = JsonIterator.deserialize(response.body(), Integer[].class);
-                        for (Integer i : cash) {
-                            Repository.addMoney(i);
+        if (Repository.wallet.remainingCapacity() == 0) {
+            httpClient.sendAsync(httpRequest, HttpResponse.BodyHandlers.discarding());
+        } else {
+            httpClient.sendAsync(httpRequest, HttpResponse.BodyHandlers.ofByteArray())
+                    .thenAcceptAsync(response -> {
+                        if (response.statusCode() == Const.HTTP_OK) {
+                            Repository.rpsSuccess.incrementAndGet();
+                            Repository.incMoneySuccess();
+                            var cash = JsonIterator.deserialize(response.body(), Integer[].class);
+                            for (Integer i : cash) {
+                                Repository.addMoney(i);
+                            }
+                        } else {
+                            Repository.incMoneyError();
+                            Repository.addMoneyRetry(response.request());
                         }
-                    } else {
-                        Repository.incMoneyError();
-                        Repository.addMoneyRetry(response.request());
-                    }
-                }, responseEx);
+                    }, responseEx);
+        }
     }
 
     public HttpResponse<byte[]> exploreBlocking(Area area) throws IOException, InterruptedException {
@@ -186,8 +190,11 @@ public class Client {
                     Repository.rpsSuccess.incrementAndGet();
                     Repository.incExplorerSuccess();
                     return JsonIterator.deserialize(response.body(), Explored.class);
+                } else {
+                    Repository.incExplorerError();
                 }
             } catch (Exception e) {
+                Repository.incExplorerError();
             }
         }
     }
