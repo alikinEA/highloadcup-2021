@@ -42,19 +42,31 @@ public class Client {
                 .build();
     }
     private HttpRequest createPaidLicenseRequest(Integer cash) {
+        byte[] body = wrap(cash.toString(), Const.BRACKET_O, Const.BRACKET_C);
         return HttpRequest.newBuilder()
                 .uri(licensesURI)
                 .headers(Const.CONTENT_TYPE, Const.APPLICATION_JSON)
-                .POST(HttpRequest.BodyPublishers.ofString("[" + cash + "]"))
+                .POST(HttpRequest.BodyPublishers.ofByteArray(body))
                 .build();
     }
 
     private HttpRequest createCashRequest(String treasureId) {
+        byte[] body = wrap(treasureId, Const.QUOTE, Const.QUOTE);
         return HttpRequest.newBuilder()
                 .uri(cashURI)
                 .headers(Const.CONTENT_TYPE, Const.APPLICATION_JSON)
-                .POST(HttpRequest.BodyPublishers.ofString("\"" + treasureId + "\""))
+                .POST(HttpRequest.BodyPublishers.ofByteArray(body))
                 .build();
+    }
+
+    private byte[] wrap(String string, byte symbol_o, byte symbol_c) {
+        byte[] trIdBytes = string.getBytes();
+        byte[] body = new byte[trIdBytes.length + 2];
+        body[0] = symbol_o;
+
+        System.arraycopy(trIdBytes, 0, body, 1, trIdBytes.length);
+        body[body.length - 1] = symbol_c;
+        return body;
     }
 
     private HttpRequest createDigRequest(DigRq digRq) {
@@ -170,18 +182,12 @@ public class Client {
         while (true) {
             try {
                 var response = exploreBlocking(area);
-                if (response.statusCode() != Const.HTTP_OK) {
-                    Thread.sleep(10);
-                } else {
+                if (response.statusCode() == Const.HTTP_OK) {
                     Repository.rpsSuccess.incrementAndGet();
                     Repository.incExplorerSuccess();
                     return JsonIterator.deserialize(response.body(), Explored.class);
                 }
             } catch (Exception e) {
-                try {
-                    Thread.sleep(10);
-                } catch (Exception e1) {
-                }
             }
         }
     }
