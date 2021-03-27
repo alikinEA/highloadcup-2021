@@ -69,11 +69,11 @@ public class Client {
         return body;
     }
 
-    private HttpRequest createDigRequest(DigRq digRq) {
+    private HttpRequest createDigRequest(Dig dig) {
         return HttpRequest.newBuilder()
                 .uri(digURI)
                 .headers(Const.CONTENT_TYPE, Const.APPLICATION_JSON)
-                .POST(HttpRequest.BodyPublishers.ofString(JsonStream.serialize(digRq)))
+                .POST(HttpRequest.BodyPublishers.ofString(JsonStream.serialize(dig)))
                 .build();
     }
 
@@ -85,20 +85,19 @@ public class Client {
                 .build();
     }
 
-    private void handleDigResponse(HttpResponse<byte[]> response, DigFull fullDig) {
+    private void handleDigResponse(HttpResponse<byte[]> response, Dig dig) {
         if (response.statusCode() == Const.HTTP_OK || response.statusCode() == Const.HTTP_NOT_FOUND) {
             Repository.rpsSuccess.incrementAndGet();
-            var license = fullDig.getLicense();
-            var digRq = fullDig.getDigRq();
-            var amount = fullDig.getAmount();
+            var license = dig.getLicense();
+            var amount = dig.getAmount();
 
             license.setDigAllowed(license.getDigAllowed() - 1);
-            digRq.setDepth(digRq.getDepth() + 1);
+            dig.setDepth(dig.getDepth() + 1);
 
             if (response.statusCode() == Const.HTTP_OK) {
-                fullDig.setCurrentAmount(fullDig.getCurrentAmount() + 1);
+                dig.setCurrentAmount(dig.getCurrentAmount() + 1);
                 Repository.incDigSuccess();
-                if (digRq.getDepth() > 3) {
+                if (dig.getDepth() > 3) {
                     var treasures = JsonIterator.deserialize(response.body(), String[].class);
                     for (int i = 0; i < treasures.length; i++) {
                         getMyMoney(treasures[i]);
@@ -109,15 +108,15 @@ public class Client {
             } else {
                 Repository.incDigMiss();
             }
-            if (digRq.getDepth() == Application.GRABTIEFE && fullDig.getCurrentAmount() < amount) {
+            if (dig.getDepth() == Application.GRABTIEFE && dig.getCurrentAmount() < amount) {
                 Repository.incTreasureNotFound();
             }
 
-            if (digRq.getDepth() < Application.GRABTIEFE && fullDig.getCurrentAmount() < amount) {
+            if (dig.getCurrentAmount() < amount) {
                 if (license.getDigAllowed() > 0) {
-                    digAsync(fullDig);
+                    digAsync(dig);
                 } else {
-                    Repository.addDugFull(fullDig);
+                    Repository.addDug(dig);
                 }
             } else {
                 if (license.getDigAllowed() > 0) {
@@ -177,9 +176,9 @@ public class Client {
         return httpClient.send(newLicenseR, HttpResponse.BodyHandlers.ofByteArray());
     }
 
-    public void digAsync(DigFull digFull) {
-        httpClient.sendAsync(createDigRequest(digFull.getDigRq()), HttpResponse.BodyHandlers.ofByteArray())
-                .thenAcceptAsync(response -> handleDigResponse(response, digFull));
+    public void digAsync(Dig dig) {
+        httpClient.sendAsync(createDigRequest(dig), HttpResponse.BodyHandlers.ofByteArray())
+                .thenAcceptAsync(response -> handleDigResponse(response, dig));
     }
 
     public Explored doExplore(Area area) {

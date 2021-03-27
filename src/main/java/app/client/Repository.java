@@ -1,6 +1,6 @@
 package app.client;
 
-import app.client.models.DigFull;
+import app.client.models.Dig;
 import app.client.models.Explored;
 import app.client.models.License;
 
@@ -10,7 +10,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Repository {
-    private static final BlockingQueue<DigFull> dugFull = new LinkedBlockingQueue<>();
+    private static final BlockingQueue<Dig> dug = new LinkedBlockingQueue<>();
     public static final BlockingQueue<License> licensesStore = new LinkedBlockingQueue<>();
     private static final BlockingQueue<HttpRequest> moneyRetry = new LinkedBlockingQueue<>();
     public static final BlockingQueue<Explored> exploredAreas1 = new LinkedBlockingQueue<>();
@@ -121,7 +121,7 @@ public class Repository {
                 + " ExplorerErrors = " + explorerError.get()
                 + " Explored size1 = " + exploredAreas1.size()
                 + " Explored size2 = " + exploredAreas2.size()
-                + " DugFull = " + dugFull.size()
+                + " Dug = " + dug.size()
                 + " LicenseError size = " + licenseError.get()
                 + " LicensesStore = " + licensesStore.size()
                 + " PaidLicenses = " + paidLicenses.get()
@@ -163,12 +163,12 @@ public class Repository {
         return explorerSuccess.incrementAndGet();
     }
 
-    public static DigFull pollDugFull() {
-        return dugFull.poll();
+    public static Dig pollDug() {
+        return dug.poll();
     }
 
-    public static boolean addDugFull(DigFull fullDig) {
-        return dugFull.add(fullDig);
+    public static boolean addDug(Dig dig) {
+        return dug.add(dig);
     }
 
     public static int incTreasureNotFound() {

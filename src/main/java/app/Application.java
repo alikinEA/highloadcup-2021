@@ -189,19 +189,17 @@ public class Application {
     private void runDigger() {
         ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
         executorService.scheduleWithFixedDelay(() -> {
-            var digFull = Repository.pollDugFull();
+            var dig = Repository.pollDug();
             var license = Repository.takeLicense();
-            if (digFull != null) {
-                digFull.getDigRq().setLicenseID(license.getId());
-                digFull.setLicense(license);
+            if (dig != null) {
+                dig.setLicense(license);
                 //logger.error("Dug one more time = " + digFull + Repository.getActionsInfo());
-                client.digAsync(digFull);
+                client.digAsync(dig);
             } else {
                 var explored = Repository.takeExplored();
                 var exploredArea = explored.getArea();
                 //logger.error("Take license = " + license);
-                var digRq = new DigRq(license.getId(), exploredArea.getPosX(), exploredArea.getPosY(), 1);
-                client.digAsync(new DigFull(digRq, explored.getAmount(), 0, license));
+                client.digAsync(new Dig(explored.getAmount(), 0, license, exploredArea.getPosX(), exploredArea.getPosY(), 1));
             }
 
         }, 1, 1, TimeUnit.MILLISECONDS);
