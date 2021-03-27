@@ -138,16 +138,20 @@ public class Client {
         } else {
             httpClient.sendAsync(httpRequest, HttpResponse.BodyHandlers.ofByteArray())
                     .thenAcceptAsync(response -> {
-                        if (response.statusCode() == Const.HTTP_OK) {
-                            Repository.rpsSuccess.incrementAndGet();
-                            Repository.incMoneySuccess();
-                            var cash = JsonIterator.deserialize(response.body(), Integer[].class);
-                            for (Integer i : cash) {
-                                Repository.addMoney(i);
+                        try {
+                            if (response.statusCode() == Const.HTTP_OK) {
+                                Repository.rpsSuccess.incrementAndGet();
+                                Repository.incMoneySuccess();
+                                var iterator = JsonIterator.parse(response.body());
+                                while (iterator.readArray()) {
+                                    Repository.addMoney(iterator.readInt());
+                                }
+                            } else {
+                                Repository.incMoneyError();
+                                Repository.addMoneyRetry(response.request());
                             }
-                        } else {
+                        } catch (Exception e) {
                             Repository.incMoneyError();
-                            Repository.addMoneyRetry(response.request());
                         }
                     }, responseEx);
         }
