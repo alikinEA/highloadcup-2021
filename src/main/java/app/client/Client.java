@@ -60,11 +60,11 @@ public class Client {
     }
 
     private byte[] wrap(String string, byte symbol_o, byte symbol_c) {
-        byte[] trIdBytes = string.getBytes();
-        byte[] body = new byte[trIdBytes.length + 2];
+        byte[] bytes = string.getBytes();
+        byte[] body = new byte[bytes.length + 2];
         body[0] = symbol_o;
 
-        System.arraycopy(trIdBytes, 0, body, 1, trIdBytes.length);
+        System.arraycopy(bytes, 0, body, 1, bytes.length);
         body[body.length - 1] = symbol_c;
         return body;
     }
@@ -86,44 +86,48 @@ public class Client {
     }
 
     private void handleDigResponse(HttpResponse<byte[]> response, Dig dig) {
-        if (response.statusCode() == Const.HTTP_OK || response.statusCode() == Const.HTTP_NOT_FOUND) {
-            Repository.rpsSuccess.incrementAndGet();
-            var license = dig.getLicense();
-            var amount = dig.getAmount();
+        try {
+            if (response.statusCode() == Const.HTTP_OK || response.statusCode() == Const.HTTP_NOT_FOUND) {
+                Repository.rpsSuccess.incrementAndGet();
+                var license = dig.getLicense();
+                var amount = dig.getAmount();
 
-            license.setDigAllowed(license.getDigAllowed() - 1);
-            dig.setDepth(dig.getDepth() + 1);
+                license.setDigAllowed(license.getDigAllowed() - 1);
+                dig.setDepth(dig.getDepth() + 1);
 
-            if (response.statusCode() == Const.HTTP_OK) {
-                dig.setCurrentAmount(dig.getCurrentAmount() + 1);
-                Repository.incDigSuccess();
-                if (dig.getDepth() > 3) {
-                    var treasures = JsonIterator.deserialize(response.body(), String[].class);
-                    for (int i = 0; i < treasures.length; i++) {
-                        getMyMoney(treasures[i]);
+                if (response.statusCode() == Const.HTTP_OK) {
+                    dig.setCurrentAmount(dig.getCurrentAmount() + 1);
+                    Repository.incDigSuccess();
+                    if (dig.getDepth() > 3) {
+                        var iterator = JsonIterator.parse(response.body());
+                        while (iterator.readArray()) {
+                            getMyMoney(iterator.readString());
+                        }
+                    } else {
+                        Repository.skipTreasure.incrementAndGet();
                     }
                 } else {
-                    Repository.skipTreasure.incrementAndGet();
+                    Repository.incDigMiss();
                 }
-            } else {
-                Repository.incDigMiss();
-            }
-            if (dig.getDepth() == Application.GRABTIEFE && dig.getCurrentAmount() < amount) {
-                Repository.incTreasureNotFound();
-            }
+                if (dig.getDepth() == Application.GRABTIEFE && dig.getCurrentAmount() < amount) {
+                    Repository.incTreasureNotFound();
+                }
 
-            if (dig.getCurrentAmount() < amount) {
-                if (license.getDigAllowed() > 0) {
-                    digAsync(dig);
+                if (dig.getCurrentAmount() < amount) {
+                    if (license.getDigAllowed() > 0) {
+                        digAsync(dig);
+                    } else {
+                        Repository.addDug(dig);
+                    }
                 } else {
-                    Repository.addDug(dig);
+                    if (license.getDigAllowed() > 0) {
+                        Repository.putLicense(license);
+                    }
                 }
             } else {
-                if (license.getDigAllowed() > 0) {
-                    Repository.putLicense(license);
-                }
+                Repository.incDigError();
             }
-        } else {
+        } catch (Exception e) {
             Repository.incDigError();
         }
     }
